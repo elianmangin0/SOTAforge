@@ -1,0 +1,29 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    # Ruff version.
+    rev: v0.14.4
+    hooks:
+      # Run the linter.
+      - id: ruff-check
+        args: [ --fix ]
+      # Run the formatter.
+      - id: ruff-format
+
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy-check
+        entry: uv run mypy --strict --config-file=pyproject.toml
+        language: system
+        types: [python]
+
+
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest-run
+        entry: uv run pytest -q
+        language: system
+        types: [python]
+        pass_filenames: false
+        always_run: true

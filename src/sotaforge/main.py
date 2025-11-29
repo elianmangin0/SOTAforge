@@ -1,0 +1,1 @@
+"""Main for SOTAforge tool."""
