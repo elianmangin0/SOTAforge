@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import json
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from fastmcp import FastMCP
 from openai import AsyncOpenAI
@@ -21,7 +21,7 @@ from sotaforge.agents import (
     search_server,
     synthesizer_server,
 )
-from sotaforge.utils.constants import MODEL
+from sotaforge.utils.constants import MODEL, CollectionNames
 from sotaforge.utils.dataclasses import Document
 from sotaforge.utils.db import ChromaStore
 from sotaforge.utils.logger import get_logger
@@ -63,17 +63,19 @@ server.mount(db_agent.server, prefix="db")
 
 db_store = ChromaStore()
 
-# Prompts moved to sotaforge.utils.prompts
+# Type alias for message dictionaries
+ChatMessage = Dict[str, Any]
 
 MAX_RETRIES = 3
 
 
-def _get_last_messages(messages: list[Any], n: int = 5) -> list[Any]:
+def _get_last_messages(messages: List[ChatMessage], n: int = 5) -> List[ChatMessage]:
     """Get last N messages for logging to reduce log verbosity."""
     return messages[-n:] if len(messages) > n else messages
 
 
 def _normalize_tool_result(result: Any) -> Any:
+    """Normalize tool result from various formats to a consistent structure."""
     # 1. Unwrap SDK result
     content = result.content if hasattr(result, "content") else result
 
@@ -95,7 +97,7 @@ def _normalize_tool_result(result: Any) -> Any:
     return content
 
 
-async def _execute_tool_calls(messages: list[Any]) -> list[Any]:
+async def _execute_tool_calls(messages: List[ChatMessage]) -> List[ChatMessage]:
     """Execute any pending tool calls on the last message and append tool responses.
 
     Args:
@@ -113,8 +115,8 @@ async def _execute_tool_calls(messages: list[Any]) -> list[Any]:
         else:
             tool_calls = getattr(last, "tool_calls", None)
 
-        logger.info(f"Found tool calls: {tool_calls}")
         if tool_calls:
+            logger.info(f"Executing {len(tool_calls)} tool call(s)")
             for call in tool_calls:
                 # Handle both dict and object types
                 if isinstance(call, dict):
@@ -126,34 +128,15 @@ async def _execute_tool_calls(messages: list[Any]) -> list[Any]:
                     tool_args = json.loads(call.function.arguments)
                     call_id = call.id
 
-                logger.debug(
-                    "Executing tool: %s with args: %s",
-                    tool_name,
-                    json.dumps(tool_args),
-                )
+                logger.debug(f"Executing tool: {tool_name}")
 
                 # Inject messages context for store_tool_results
                 if tool_name == "db_store_tool_results":
                     tool_args["messages"] = messages
-                    logger.debug(
-                        "Injected messages context into tool args for %s", tool_name
-                    )
-                    logger.debug("Type of messages: %s", type(tool_args["messages"]))
-                    logger.debug(
-                        type(tool_args["messages"]),
-                    )
-                    logger.debug(
-                        len(tool_args["messages"]),
-                    )
-                    logger.debug(type(tool_args["messages"][0]))
+                    logger.debug("Injected messages context for store_tool_results")
+
                 tool = await server.get_tool(tool_name)
                 result = await tool.run(tool_args)
-
-                logger.debug(
-                    "Tool %s executed with raw result: %s",
-                    tool_name,
-                    json.dumps(result, default=str),
-                )
 
                 # Wrap result with metadata so LLM can see the tool_call_id
                 wrapped_result = {
@@ -162,11 +145,7 @@ async def _execute_tool_calls(messages: list[Any]) -> list[Any]:
                     "result": _normalize_tool_result(result),
                 }
                 result_content = json.dumps(wrapped_result, default=str)
-                logger.debug(
-                    "Tool %s executed with normalized result: %s",
-                    tool_name,
-                    result_content,
-                )
+                logger.debug(f"Tool {tool_name} completed")
                 messages.append(
                     {
                         "role": "tool",
@@ -178,11 +157,11 @@ async def _execute_tool_calls(messages: list[Any]) -> list[Any]:
 
 
 async def validate_step(
-    messages: list[Any], prompt: str, openai_tools: list[dict]
-) -> tuple[bool, list[Any]]:
+    messages: List[ChatMessage], prompt: str, openai_tools: list[dict]
+) -> tuple[bool, List[ChatMessage]]:
     """Ask the LLM to approve or redo the current step.
 
-    Returns a tuple: (approved, messages_with_llm_response, llm_message).
+    Returns a tuple: (approved, messages_with_llm_response).
     """
     validation_messages = [
         {"role": "system", "content": VALIDATION_PROMPT},
@@ -191,10 +170,6 @@ async def validate_step(
     messages.extend(validation_messages)
 
     logger.info("Validating step with LLM")
-    logger.debug(
-        "Messages before validation (last 5): %s",
-        json.dumps(_get_last_messages(messages), indent=2, default=str),
-    )
 
     response = await llm.chat.completions.create(
         model=MODEL,  # type: ignore[call-overload]
@@ -208,7 +183,7 @@ async def validate_step(
     messages.append(msg_dict)
 
     if msg.content:
-        logger.debug(f"LLM ({msg.role}) Content: {msg.content}")
+        logger.debug(f"LLM validation response: {msg.content[:100]}...")
 
     # Execute any tool calls from the validation response
     messages = await _execute_tool_calls(messages)
@@ -216,25 +191,17 @@ async def validate_step(
     # Approve when the assistant explicitly says APPROVE (case-insensitive)
     approved = bool(msg.content and msg.content.strip().upper().startswith("APPROVE"))
 
-    logger.info("Validating step with LLM")
-    logger.debug(
-        "Messages after validation (last 5): %s",
-        json.dumps(_get_last_messages(messages), indent=2, default=str),
-    )
+    logger.info(f"Step validation: {'APPROVED' if approved else 'NEEDS RETRY'}")
 
     return approved, messages
 
 
 async def process_message_and_gets_llm_response(
-    messages: list[Any],
+    messages: List[ChatMessage],
     openai_tools: list[dict],
-) -> list[Any]:
+) -> List[ChatMessage]:
     """Single-pass: execute msg.tool_calls, then fetch next LLM reply."""
     logger.info("Processing message with LLM")
-    logger.debug(
-        "Messages before processing (last 5): %s",
-        json.dumps(_get_last_messages(messages), indent=2, default=str),
-    )
 
     response = await llm.chat.completions.create(
         model=MODEL,  # type: ignore[call-overload]
@@ -248,16 +215,10 @@ async def process_message_and_gets_llm_response(
     messages.append(msg_dict)
 
     if msg.content:
-        logger.debug(f"LLM ({msg.role}) Content: {msg.content}")
+        logger.debug(f"LLM response: {msg.content[:100]}...")
 
     # Execute any tool calls from the LLM response
     messages = await _execute_tool_calls(messages)
-
-    logger.info("Processing message with LLM")
-    logger.debug(
-        "Messages after processing (last 5): %s",
-        json.dumps(_get_last_messages(messages), indent=2, default=str),
-    )
 
     return messages
 
@@ -276,15 +237,15 @@ async def store_final_sota(sota_text: str, topic: str | None = None) -> Dict[str
         if topic
         else {"type": "final_sota"},
     )
-    ids = db_store.upsert_documents("8_final_sota", [doc])
-    return {"collection": "8_final_sota", "stored": True, "ids": ids}
+    ids = db_store.upsert_documents(CollectionNames.FINAL_SOTA, [doc])
+    return {"collection": CollectionNames.FINAL_SOTA, "stored": True, "ids": ids}
 
 
 async def run_llm_sota(topic: str) -> int:
     """Run fixed pipeline with LLM validation at each step."""
     logger.info(f"Starting SOTA generation for topic: {topic}")
 
-    messages: list[Any] = [
+    messages: List[ChatMessage] = [
         {"role": "system", "content": ORCHESTRATOR_SYSTEM_PROMPT},
     ]
 
@@ -301,155 +262,88 @@ async def run_llm_sota(topic: str) -> int:
         ),
     )
 
-    # Step 1: Search for web and paper sources
-    number_of_tries = 1
-    approved = False
-    messages.append({"role": "user", "content": SEARCH_INSTRUCTION.format(topic=topic)})
-    messages = await process_message_and_gets_llm_response(
-        messages, openai_tools=openai_tools
-    )
-    # Ask LLM to persist search results into collections
-    messages.append({"role": "user", "content": SAVE_SEARCH_INSTRUCTION})
-    messages = await process_message_and_gets_llm_response(
-        messages, openai_tools=openai_tools
-    )
-    while not approved and number_of_tries < MAX_RETRIES:
-        logger.debug(
-            "messages before search validate (last 5): %s",
-            json.dumps(_get_last_messages(messages), indent=2, default=str),
-        )
-        approved, messages = await validate_step(
-            messages, prompt=VALIDATE_SEARCH, openai_tools=openai_tools
-        )
-        number_of_tries += 1
-        logger.debug(
-            "messages after search validate (last 5): %s",
-            json.dumps(_get_last_messages(messages), indent=2, default=str),
-        )
+    async def run_pipeline_step(
+        step_instruction: str,
+        save_instruction: str,
+        validation_prompt: str,
+        step_name: str,
+    ) -> None:
+        """Execute a pipeline step with validation retry logic.
 
-    # Step 2: Filter the results
-    number_of_tries = 1
-    approved = False
+        Args:
+            step_instruction: Instruction for the step
+            save_instruction: Instruction to save results
+            validation_prompt: Validation prompt
+            step_name: Name for logging
 
-    messages.append({"role": "user", "content": FILTER_INSTRUCTION.format(topic=topic)})
-    messages = await process_message_and_gets_llm_response(
-        messages, openai_tools=openai_tools
-    )
-    # Ask LLM to persist filtered results into collections
-    messages.append({"role": "user", "content": SAVE_FILTER_INSTRUCTION})
-    messages = await process_message_and_gets_llm_response(
-        messages, openai_tools=openai_tools
-    )
-    while not approved and number_of_tries < MAX_RETRIES:
-        logger.debug(
-            "messages before filter validate (last 5): %s",
-            json.dumps(_get_last_messages(messages), indent=2, default=str),
-        )
-        approved, messages = await validate_step(
-            messages, prompt=VALIDATE_FILTER, openai_tools=openai_tools
-        )
-        number_of_tries += 1
-        logger.debug(
-            "messages after filter validate (last 5): %s",
-            json.dumps(_get_last_messages(messages), indent=2, default=str),
-        )
+        """
+        approved = False
+        number_of_tries = 1
 
-    # Step 3: Parse selected sources
-    number_of_tries = 1
-    approved = False
-    messages.append({"role": "user", "content": PARSE_INSTRUCTION})
-    messages = await process_message_and_gets_llm_response(
-        messages, openai_tools=openai_tools
-    )
-    # Ask LLM to persist parsed documents into collection
-    messages.append({"role": "user", "content": SAVE_PARSE_INSTRUCTION})
-    messages = await process_message_and_gets_llm_response(
-        messages, openai_tools=openai_tools
-    )
-    while not approved and number_of_tries < MAX_RETRIES:
-        logger.debug(
-            "messages before parse validate (last 5): %s",
-            json.dumps(_get_last_messages(messages), indent=2, default=str),
-        )
-        approved, messages = await validate_step(
-            messages, prompt=VALIDATE_PARSE, openai_tools=openai_tools
-        )
-        number_of_tries += 1
-        logger.debug(
-            "messages after parse validate (last 5): %s",
-            json.dumps(_get_last_messages(messages), indent=2, default=str),
-        )
+        messages.append({"role": "user", "content": step_instruction})
+        await process_message_and_gets_llm_response(messages, openai_tools=openai_tools)
 
-    # Step 4: Analyze parsed content
-    number_of_tries = 1
-    approved = False
-    messages.append({"role": "user", "content": ANALYZE_INSTRUCTION})
-    messages = await process_message_and_gets_llm_response(
-        messages, openai_tools=openai_tools
-    )
-    messages.append({"role": "user", "content": SAVE_ANALYZE_INSTRUCTION})
-    messages = await process_message_and_gets_llm_response(
-        messages, openai_tools=openai_tools
-    )
-    while not approved and number_of_tries < MAX_RETRIES:
-        logger.debug(
-            "messages before analyze validate (last 5): %s",
-            json.dumps(_get_last_messages(messages), indent=2, default=str),
-        )
-        approved, messages = await validate_step(
-            messages, prompt=VALIDATE_ANALYZE, openai_tools=openai_tools
-        )
-        number_of_tries += 1
-        logger.debug(
-            "messages after analyze validate (last 5): %s",
-            json.dumps(_get_last_messages(messages), indent=2, default=str),
-        )
+        if save_instruction:  # Only run save if instruction provided
+            messages.append({"role": "user", "content": save_instruction})
+            await process_message_and_gets_llm_response(
+                messages, openai_tools=openai_tools
+            )
 
-    # Step 5: Synthesize final SOTA report
-    number_of_tries = 1
-    approved = False
-    messages.append({"role": "user", "content": SYNTHESIZE_INSTRUCTION})
-    messages = await process_message_and_gets_llm_response(
-        messages, openai_tools=openai_tools
+        while not approved and number_of_tries < MAX_RETRIES:
+            logger.debug(
+                f"{step_name} validation attempt {number_of_tries}/{MAX_RETRIES}"
+            )
+            approved, _ = await validate_step(
+                messages, prompt=validation_prompt, openai_tools=openai_tools
+            )
+            number_of_tries += 1
+
+        if not approved:
+            logger.warning(
+                f"{step_name} step not approved after {MAX_RETRIES} attempts"
+            )
+
+    # Step 1: Search
+    await run_pipeline_step(
+        SEARCH_INSTRUCTION.format(topic=topic),
+        SAVE_SEARCH_INSTRUCTION,
+        VALIDATE_SEARCH,
+        "search",
     )
-    messages.append({"role": "user", "content": SAVE_SYNTHESIZE_INSTRUCTION})
-    messages = await process_message_and_gets_llm_response(
-        messages, openai_tools=openai_tools
+
+    # Step 2: Filter
+    await run_pipeline_step(
+        FILTER_INSTRUCTION.format(topic=topic),
+        SAVE_FILTER_INSTRUCTION,
+        VALIDATE_FILTER,
+        "filter",
     )
-    while not approved and number_of_tries < MAX_RETRIES:
-        logger.debug(
-            "messages before synthesize validate (last 5): %s",
-            json.dumps(_get_last_messages(messages), indent=2, default=str),
-        )
-        approved, messages = await validate_step(
-            messages, prompt=VALIDATE_SYNTHESIZE, openai_tools=openai_tools
-        )
-        number_of_tries += 1
-        logger.debug(
-            "messages after synthesize validate (last 5): %s",
-            json.dumps(_get_last_messages(messages), indent=2, default=str),
-        )
+
+    # Step 3: Parse
+    await run_pipeline_step(
+        PARSE_INSTRUCTION, SAVE_PARSE_INSTRUCTION, VALIDATE_PARSE, "parse"
+    )
+
+    # Step 4: Analyze
+    await run_pipeline_step(
+        ANALYZE_INSTRUCTION, SAVE_ANALYZE_INSTRUCTION, VALIDATE_ANALYZE, "analyze"
+    )
+
+    # Step 5: Synthesize
+    await run_pipeline_step(
+        SYNTHESIZE_INSTRUCTION,
+        SAVE_SYNTHESIZE_INSTRUCTION,
+        VALIDATE_SYNTHESIZE,
+        "synthesize",
+    )
 
     # Step 6: Store final SOTA report
-    number_of_tries = 1
-    approved = False
-    messages.append({"role": "user", "content": STORE_INSTRUCTION.format(topic=topic)})
-    messages = await process_message_and_gets_llm_response(
-        messages, openai_tools=openai_tools
+    await run_pipeline_step(
+        STORE_INSTRUCTION.format(topic=topic),
+        "",  # No save instruction for final step
+        VALIDATE_STORE,
+        "store",
     )
-    while not approved and number_of_tries < MAX_RETRIES:
-        logger.debug(
-            "messages before store validate (last 5): %s",
-            json.dumps(_get_last_messages(messages), indent=2, default=str),
-        )
-        approved, messages = await validate_step(
-            messages, prompt=VALIDATE_STORE, openai_tools=openai_tools
-        )
-        number_of_tries += 1
-        logger.debug(
-            "messages after store validate (last 5): %s",
-            json.dumps(_get_last_messages(messages), indent=2, default=str),
-        )
 
     logger.info("SOTA generation pipeline completed successfully")
     return 0

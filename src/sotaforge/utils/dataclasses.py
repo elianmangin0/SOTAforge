@@ -130,11 +130,3 @@ class DocumentScore:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to JSON-serializable dict."""
         return asdict(self)
-
-
-@dataclass
-class FilterResult:
-    """Result from filtering a document for relevance."""
-
-    relevant: bool
-    reason: str

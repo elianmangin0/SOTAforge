@@ -61,11 +61,6 @@ STORE_INSTRUCTION = (
     "Include the topic in metadata: {topic}."
 )
 
-# Per-step retrieve instructions (fetch results from previous step)
-# like in the previous steps
-# Note: Filter, Parse, Analyze, and Synthesize steps retrieve internally,
-# no separate retrieve needed
-
 # Per-step save instructions (update Chroma collections)
 SAVE_SEARCH_INSTRUCTION = (
     "IMPORTANT: You MUST save the search results now. "
@@ -129,4 +124,4 @@ VALIDATE_SYNTHESIZE = (
     "Approve the synthesized SOTA report and confirm the 'synthesized' collection is "
     "updated with the final report."
 )
-VALIDATE_STORE = "Confirm the final SOTA report is stored in collection: 8_final_sota."
+VALIDATE_STORE = "Confirm the final SOTA report is stored in the final collection."

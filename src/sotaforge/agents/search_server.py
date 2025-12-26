@@ -10,6 +10,7 @@ from fastmcp import FastMCP
 
 from sotaforge.utils.constants import ARXIV_API, MAX_RESULTS, SERPER_URL
 from sotaforge.utils.dataclasses import NotParsedDocument
+from sotaforge.utils.errors import ConfigurationError, SearchError
 from sotaforge.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -35,7 +36,22 @@ async def search_web(
     Returns:
         Dict with 'query' and 'results' keys. 'results' is a list of Document objects.
 
+    Raises:
+        SearchError: If query is empty or max_results is invalid
+        ConfigurationError: If SERPER_API_KEY is not set
+
     """
+    # Validate inputs
+    if not query or not query.strip():
+        raise SearchError("Search query cannot be empty")
+
+    if max_results < 1 or max_results > 100:
+        raise SearchError("max_results must be between 1 and 100")
+
+    api_key = os.getenv("SERPER_API_KEY", "")
+    if not api_key:
+        raise ConfigurationError("SERPER_API_KEY environment variable is not set")
+
     logger.info(f"Searching web for: {query}")
 
     # Calculate number of pages needed (10 results per page)
@@ -54,7 +70,7 @@ async def search_web(
         )
 
         headers = {
-            "X-API-KEY": os.getenv("SERPER_API_KEY", ""),
+            "X-API-KEY": api_key,
             "Content-Type": "application/json",
         }
 
@@ -105,7 +121,17 @@ async def search_papers(
         Dict with 'query' and 'results' keys.
         'results' is a list of NotParsedDocument objects converted to dicts.
 
+    Raises:
+        SearchError: If query is empty or max_results is invalid
+
     """
+    # Validate inputs
+    if not query or not query.strip():
+        raise SearchError("Search query cannot be empty")
+
+    if max_results < 1 or max_results > 100:
+        raise SearchError("max_results must be between 1 and 100")
+
     logger.info(f"Searching arXiv for query: {query}")
 
     # arXiv API: search in all fields, order by relevance

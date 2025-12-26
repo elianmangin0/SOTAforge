@@ -17,7 +17,20 @@ def _configure_temp_chroma_path() -> str:
 
 
 async def call_produce_sota(topic: str) -> Dict[str, Any]:
-    """Produce a SOTA on the given topic by calling the orchestrator directly."""
+    """Produce a SOTA on the given topic by calling the orchestrator directly.
+
+    Args:
+        topic: The research topic (must be non-empty)
+
+    Raises:
+        ValueError: If topic is empty or invalid
+
+    """
+    if not topic or not topic.strip():
+        raise ValueError("Topic cannot be empty")
+
+    topic = topic.strip()
+
     # Import after setting the temp DB path so orchestrator/DB use it
     from sotaforge.agents.orchestrator import run_llm_sota
 

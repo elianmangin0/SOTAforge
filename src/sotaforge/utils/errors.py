@@ -1,4 +1,4 @@
-"""Custom exceptions for the Watcher project."""
+"""Custom exceptions for the SOTAforge project."""
 
 
 class SOTAError(Exception):
