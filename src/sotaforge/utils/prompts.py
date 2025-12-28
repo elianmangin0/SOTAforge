@@ -56,11 +56,6 @@ SYNTHESIZE_INSTRUCTION = (
     "methods, benchmarks, metrics, trends, and open gaps."
 )
 
-STORE_INSTRUCTION = (
-    "Store the final SOTA report text using the storage tool. "
-    "Include the topic in metadata: {topic}."
-)
-
 # Per-step save instructions (update Chroma collections)
 SAVE_SEARCH_INSTRUCTION = (
     "IMPORTANT: You MUST save the search results now. "
@@ -124,4 +119,3 @@ VALIDATE_SYNTHESIZE = (
     "Approve the synthesized SOTA report and confirm the 'synthesized' collection is "
     "updated with the final report."
 )
-VALIDATE_STORE = "Confirm the final SOTA report is stored in the final collection."

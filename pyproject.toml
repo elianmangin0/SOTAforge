@@ -14,12 +14,13 @@ dependencies = [
     "docling>=2.0.0",
     "pydantic-ai>=0.0.14",
     "chromadb>=0.5.18",
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "python-multipart>=0.0.9",
 ]
 
 [project.scripts]
-server = "sotaforge.agents.orchestrator:main"
-client = "sotaforge.client:main"
-main = "sotaforge.main:main"
+api = "sotaforge.api:main"
 
 [build-system]
 requires = ["hatchling"]

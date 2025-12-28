@@ -21,9 +21,7 @@ from sotaforge.agents import (
     search_server,
     synthesizer_server,
 )
-from sotaforge.utils.constants import MODEL, CollectionNames
-from sotaforge.utils.dataclasses import Document
-from sotaforge.utils.db import ChromaStore
+from sotaforge.utils.constants import MODEL
 from sotaforge.utils.logger import get_logger
 from sotaforge.utils.prompts import (
     ANALYZE_INSTRUCTION,
@@ -36,13 +34,11 @@ from sotaforge.utils.prompts import (
     SAVE_SEARCH_INSTRUCTION,
     SAVE_SYNTHESIZE_INSTRUCTION,
     SEARCH_INSTRUCTION,
-    STORE_INSTRUCTION,
     SYNTHESIZE_INSTRUCTION,
     VALIDATE_ANALYZE,
     VALIDATE_FILTER,
     VALIDATE_PARSE,
     VALIDATE_SEARCH,
-    VALIDATE_STORE,
     VALIDATE_SYNTHESIZE,
     VALIDATION_PROMPT,
 )
@@ -60,8 +56,6 @@ server.mount(parser_server.server, prefix="parser")
 server.mount(analyzer_server.server, prefix="analyzer")
 server.mount(synthesizer_server.server, prefix="synthesizer")
 server.mount(db_agent.server, prefix="db")
-
-db_store = ChromaStore()
 
 # Type alias for message dictionaries
 ChatMessage = Dict[str, Any]
@@ -156,6 +150,37 @@ async def _execute_tool_calls(messages: List[ChatMessage]) -> List[ChatMessage]:
     return messages
 
 
+def _extract_synthesized_sota_text(messages: List[ChatMessage]) -> str:
+    """Extract the synthesized SOTA text from tool results.
+
+    Looks for the latest tool message produced by the synthesizer's `write_sota`
+    tool and returns its `text` field. Falls back to empty string if not found.
+    """
+    for msg in reversed(messages):
+        if isinstance(msg, dict) and msg.get("role") == "tool":
+            payload = msg.get("content")
+            try:
+                data = json.loads(payload) if isinstance(payload, str) else payload
+            except Exception:
+                continue
+
+            tool_name = (data or {}).get("tool_name")
+            if not tool_name:
+                continue
+
+            # Accept both prefixed and unprefixed names
+            if tool_name == "synthesizer_write_sota" or tool_name.endswith(
+                "write_sota"
+            ):
+                result = (data or {}).get("result")
+                if isinstance(result, dict):
+                    text = result.get("text") or result.get("sota")
+                    if isinstance(text, str):
+                        return text
+
+    return ""
+
+
 async def validate_step(
     messages: List[ChatMessage], prompt: str, openai_tools: list[dict]
 ) -> tuple[bool, List[ChatMessage]]:
@@ -223,25 +248,7 @@ async def process_message_and_gets_llm_response(
     return messages
 
 
-@server.tool(
-    name="store_final_sota",
-    description="Store the final SOTA report text.",
-)
-async def store_final_sota(sota_text: str, topic: str | None = None) -> Dict[str, Any]:
-    """Persist the final SOTA output in Chroma."""
-    doc = Document(
-        title=topic or "Final SOTA Report",
-        text=sota_text,
-        source_type="sota_report",
-        metadata={"type": "final_sota", "topic": topic}
-        if topic
-        else {"type": "final_sota"},
-    )
-    ids = db_store.upsert_documents(CollectionNames.FINAL_SOTA, [doc])
-    return {"collection": CollectionNames.FINAL_SOTA, "stored": True, "ids": ids}
-
-
-async def run_llm_sota(topic: str) -> int:
+async def run_llm_sota(topic: str) -> dict[str, Any]:
     """Run fixed pipeline with LLM validation at each step."""
     logger.info(f"Starting SOTA generation for topic: {topic}")
 
@@ -337,16 +344,16 @@ async def run_llm_sota(topic: str) -> int:
         "synthesize",
     )
 
-    # Step 6: Store final SOTA report
-    await run_pipeline_step(
-        STORE_INSTRUCTION.format(topic=topic),
-        "",  # No save instruction for final step
-        VALIDATE_STORE,
-        "store",
-    )
+    # Return the synthesized SOTA text from the tool result without storing
+    logger.info("Extracting synthesized SOTA text from tool results")
+    sota_text = _extract_synthesized_sota_text(messages)
+    if not sota_text:
+        logger.warning(
+            "No synthesized SOTA text found in tool results; returning empty text"
+        )
 
-    logger.info("SOTA generation pipeline completed successfully")
-    return 0
+    logger.info("SOTA generation pipeline completed successfully (no store)")
+    return {"topic": topic, "status": "completed", "text": sota_text}
 
 
 async def _run_server() -> int:
