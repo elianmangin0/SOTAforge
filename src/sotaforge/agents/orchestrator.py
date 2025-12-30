@@ -11,7 +11,7 @@ import json
 from typing import Any, Dict, List
 
 from fastmcp import FastMCP
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, RateLimitError
 
 from sotaforge.agents import (
     analyzer_server,
@@ -61,6 +61,31 @@ server.mount(db_agent.server, prefix="db")
 ChatMessage = Dict[str, Any]
 
 MAX_RETRIES = 3
+
+
+async def _chat_with_rate_limit_retry(
+    messages: List[ChatMessage], openai_tools: list[dict[str, Any]]
+) -> Any:
+    """Call OpenAI chat; on rate-limit, wait 60s then retry once."""
+    try:
+        return await llm.chat.completions.create(
+            model=MODEL,  # type: ignore[call-overload]
+            messages=messages,
+            tools=openai_tools,
+            tool_choice="auto",
+        )
+    except RateLimitError as e:
+        logger.warning(
+            "OpenAI rate limit hit (TPM/RPM). Cooling down 60s before retry: %s",
+            e,
+        )
+        await asyncio.sleep(60)
+        return await llm.chat.completions.create(
+            model=MODEL,  # type: ignore[call-overload]
+            messages=messages,
+            tools=openai_tools,
+            tool_choice="auto",
+        )
 
 
 def _get_last_messages(messages: List[ChatMessage], n: int = 5) -> List[ChatMessage]:
@@ -182,7 +207,7 @@ def _extract_synthesized_sota_text(messages: List[ChatMessage]) -> str:
 
 
 async def validate_step(
-    messages: List[ChatMessage], prompt: str, openai_tools: list[dict]
+    messages: List[ChatMessage], prompt: str, openai_tools: list[dict[str, Any]]
 ) -> tuple[bool, List[ChatMessage]]:
     """Ask the LLM to approve or redo the current step.
 
@@ -196,12 +221,7 @@ async def validate_step(
 
     logger.info("Validating step with LLM")
 
-    response = await llm.chat.completions.create(
-        model=MODEL,  # type: ignore[call-overload]
-        messages=messages,
-        tools=openai_tools,
-        tool_choice="auto",
-    )
+    response = await _chat_with_rate_limit_retry(messages, openai_tools)
 
     msg = response.choices[0].message
     msg_dict = msg.model_dump(exclude_unset=True)
@@ -223,17 +243,12 @@ async def validate_step(
 
 async def process_message_and_gets_llm_response(
     messages: List[ChatMessage],
-    openai_tools: list[dict],
+    openai_tools: list[dict[str, Any]],
 ) -> List[ChatMessage]:
     """Single-pass: execute msg.tool_calls, then fetch next LLM reply."""
     logger.info("Processing message with LLM")
 
-    response = await llm.chat.completions.create(
-        model=MODEL,  # type: ignore[call-overload]
-        messages=messages,
-        tools=openai_tools,
-        tool_choice="auto",
-    )
+    response = await _chat_with_rate_limit_retry(messages, openai_tools)
 
     msg = response.choices[0].message
     msg_dict = msg.model_dump(exclude_unset=True)

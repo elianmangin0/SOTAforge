@@ -139,14 +139,20 @@ class ChromaStore:
             doc_text = documents_list[i] if documents_list else ""
 
             # Reconstruct document dict with parsed JSON fields
-            doc_dict = {
-                key: (
-                    json.loads(value)
-                    if isinstance(value, str) and value.startswith(("[", "{"))
-                    else value
-                )
-                for key, value in metadata.items()
-            }
+            doc_dict = {}
+            for key, value in metadata.items():
+                if isinstance(value, str) and value.startswith(("[", "{")):
+                    try:
+                        doc_dict[key] = json.loads(value)
+                    except json.JSONDecodeError:
+                        # Be forgiving if stored metadata isn't valid JSON
+                        logger.warning(
+                            "Failed to decode metadata key '%s'; keeping raw string",
+                            key,
+                        )
+                        doc_dict[key] = value
+                else:
+                    doc_dict[key] = value
 
             # Add text field if stored
             if doc_text:

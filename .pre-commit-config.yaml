@@ -27,3 +27,21 @@ repos:
         types: [python]
         pass_filenames: false
         always_run: true
+
+  - repo: local
+    hooks:
+      - id: tsc-check
+        name: TypeScript type check
+        entry: bash -c 'cd frontend && npm run type-check'
+        language: system
+        files: '^frontend/.*\.(ts|tsx)$'
+        pass_filenames: false
+
+  - repo: local
+    hooks:
+      - id: eslint-check
+        name: ESLint check
+        entry: bash -c 'cd frontend && npm run lint'
+        language: system
+        files: '^frontend/.*\.(ts|tsx|js|jsx)$'
+        pass_filenames: false

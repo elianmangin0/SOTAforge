@@ -1,3 +1,4 @@
+
 logs/*
 __pycache__/
 *.py[cod]
@@ -5,3 +6,7 @@ __pycache__/
 .doit.*
 results.txt
 data/*
+
+frontend/node_modules/
+frontend/.next/
+frontend/.env*.local
