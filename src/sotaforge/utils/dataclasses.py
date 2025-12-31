@@ -71,6 +71,13 @@ class Document:
         """Convert this Document into a JSON-serializable dict."""
         return asdict(self)
 
+    def to_dict_with_text_limit(self, char_limit: int) -> Dict[str, Any]:
+        """Convert to dict, limiting text field to char_limit characters."""
+        doc_dict = self.to_dict()
+        if len(self.text) > char_limit:
+            doc_dict["text"] = self.text[:char_limit] + "...[truncated]"
+        return doc_dict
+
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "Document":
         """Create a Document from a mapping, filling missing fields with defaults."""

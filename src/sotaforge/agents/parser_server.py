@@ -17,36 +17,47 @@ db_store = ChromaStore()
 @server.tool(
     name="parse_documents",
     description=(
-        "Parses documents from a collection to extract full text content. "
-        "Retrieves NotParsedDocuments from the collection, parses them, "
-        "and returns Documents with text."
+        "Parses documents from a source collection and stores parsed documents "
+        "into a destination collection. Use to move filtered→parsed."
     ),
 )
 async def parse_documents(
-    collection: str,
+    document_to_process_collection: str,
+    document_processed_collection: str,
 ) -> Dict[str, Any]:
     """Parse all documents from a collection and extract text content.
 
     Args:
-        collection: The collection name to retrieve and parse from
+        document_to_process_collection: Source collection (e.g. 'filtered')
+        document_processed_collection: Destination collection (e.g. 'parsed')
 
     Returns:
-        Dict with collection name, count, and parsed documents
+        Dict with collection names, count, and parsed documents
 
     """
     # Step 1: Retrieve documents from collection
-    logger.info(f"Retrieving documents from collection: {collection}")
-    documents = db_store.fetch_documents(collection)
+    logger.info(
+        "Retrieving documents from collection: %s",
+        document_to_process_collection,
+    )
+    documents = db_store.fetch_documents(document_to_process_collection)
 
     if not documents:
-        logger.warning(f"No documents found in collection '{collection}'")
+        logger.warning(
+            "No documents found in collection '%s'",
+            document_to_process_collection,
+        )
         return {
-            "collection": collection,
+            "source_collection": document_to_process_collection,
             "parsed_documents": [],
             "count": 0,
         }
 
-    logger.info(f"Retrieved {len(documents)} documents from '{collection}'")
+    logger.info(
+        "Retrieved %s documents from '%s'",
+        len(documents),
+        document_to_process_collection,
+    )
 
     # Step 2: Parse each document
     parsed_docs = []
@@ -82,8 +93,16 @@ async def parse_documents(
             )
 
     logger.info(f"Successfully parsed {len(parsed_docs)}/{len(documents)} documents")
+
+    # Store full parsed documents in destination collection
+    db_store.upsert_documents(document_processed_collection, parsed_docs)
+
+    # Return trimmed payload to reduce LLM token usage
     return {
-        "results": [doc.to_dict() for doc in parsed_docs],
+        "source_collection": document_to_process_collection,
+        "destination_collection": document_processed_collection,
+        "stored_count": len(parsed_docs),
+        "results": [doc.to_dict_with_text_limit(800) for doc in parsed_docs],
     }
 
 

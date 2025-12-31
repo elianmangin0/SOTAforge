@@ -35,18 +35,19 @@ FILTER_INSTRUCTION = (
 
 PARSE_INSTRUCTION = (
     "Parse the filtered documents to extract full text content. "
-    "Call parser_parse_documents with collection='filtered'. "
+    "Call parser_parse_documents with document_to_process_collection='filtered' "
+    "and document_processed_collection='parsed'. "
     "The parser will retrieve all filtered documents, extract text from "
-    "web pages and PDFs, and return parsed Documents with full text."
+    "web pages and PDFs, store parsed docs into 'parsed', and return a trimmed summary."
 )
 
 ANALYZE_INSTRUCTION = (
     "Analyze the parsed content to derive findings, compare methods, "
     "extract metrics, and identify the current SOTA. "
-    "Call analyzer_analyze_documents with collection='parsed'. "
-    "The analyzer will retrieve all parsed documents from that collection, "
-    "analyze their content, and return Documents enriched with themes and "
-    "insights."
+    "Call analyzer_analyze_documents with document_to_process_collection='parsed' "
+    "and document_processed_collection='analyzed'. "
+    "The analyzer will retrieve parsed documents, enrich them, store into 'analyzed', "
+    "and return a trimmed summary."
 )
 
 SYNTHESIZE_INSTRUCTION = (

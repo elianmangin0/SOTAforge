@@ -25,21 +25,38 @@ analyzer_agent = Agent(
 @server.tool(
     name="analyze_documents",
     description=(
-        "Analyzes documents from a collection, adding themes and insights. "
-        "Retrieves parsed documents from the collection, runs analysis, "
-        "and returns updated documents."
+        "Analyzes documents from a source collection, enriches with "
+        "themes/insights, and stores results into a destination collection. "
+        "Use to move parsed→analyzed."
     ),
 )
-async def analyze_documents(collection: str) -> Dict[str, Any]:
+async def analyze_documents(
+    document_to_process_collection: str,
+    document_processed_collection: str,
+) -> Dict[str, Any]:
     """Analyze all documents in a collection and return enriched documents."""
-    logger.info(f"Retrieving documents from collection: {collection}")
-    documents = db_store.fetch_documents(collection)
+    logger.info(
+        "Retrieving documents from collection: %s",
+        document_to_process_collection,
+    )
+    documents = db_store.fetch_documents(document_to_process_collection)
 
     if not documents:
-        logger.warning(f"No documents found in collection '{collection}'")
-        return {"collection": collection, "results": [], "count": 0}
+        logger.warning(
+            "No documents found in collection '%s'",
+            document_to_process_collection,
+        )
+        return {
+            "source_collection": document_to_process_collection,
+            "results": [],
+            "count": 0,
+        }
 
-    logger.info(f"Analyzing {len(documents)} documents from '{collection}'")
+    logger.info(
+        "Analyzing %s documents from '%s'",
+        len(documents),
+        document_to_process_collection,
+    )
 
     analyzed_docs: List[Document] = []
 
@@ -59,7 +76,8 @@ async def analyze_documents(collection: str) -> Dict[str, Any]:
             " trends, challenges, and opportunities.\n\n"
             f"Title: {document.title}\n"
             f"Source Type: {document.source_type}\n\n"
-            f"Document text:\n{document.text[:3000]}"
+            # Keep prompt context short to avoid token overages
+            f"Document text (truncated):\n{document.text[:1200]}"
         )
 
         try:
@@ -81,10 +99,17 @@ async def analyze_documents(collection: str) -> Dict[str, Any]:
         analyzed_docs.append(document)
 
     logger.info("Analysis complete: %s documents analyzed", len(analyzed_docs))
+
+    # Store enriched documents automatically (full content) in destination collection
+    db_store.upsert_documents(document_processed_collection, analyzed_docs)
+
+    # Return trimmed payload to limit tokens sent back to the LLM
     return {
-        "collection": collection,
+        "source_collection": document_to_process_collection,
+        "destination_collection": document_processed_collection,
         "count": len(analyzed_docs),
-        "results": [doc.to_dict() for doc in analyzed_docs],
+        "stored_count": len(analyzed_docs),
+        "results": [doc.to_dict_with_text_limit(800) for doc in analyzed_docs],
     }
 
 
