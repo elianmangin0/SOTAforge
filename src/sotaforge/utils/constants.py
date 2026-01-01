@@ -8,6 +8,13 @@ MAX_RESULTS = 10
 MAX_ORCHESTRATOR_MESSAGES = 80
 CHROMA_PATH = "data/chroma"
 
+# Pipeline tuning constants
+MAX_MESSAGE_HISTORY = 30  # Trim message history to prevent token overages
+DOC_TEXT_LIMIT_FULL = 3000  # Character limit for full document text storage
+DOC_TEXT_LIMIT_RETURN = 800  # Character limit for document text in LLM responses
+ANALYZER_PROMPT_TEXT_LIMIT = 1200  # Character limit for analyzer prompt context
+MAX_RETRIES = 3  # Maximum validation retries per pipeline step
+
 
 # Collection names
 class CollectionNames:

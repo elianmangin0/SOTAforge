@@ -75,22 +75,6 @@ SAVE_FILTER_INSTRUCTION = (
     "Extract the 'tool_call_id' field from the tool response."
 )
 
-SAVE_PARSE_INSTRUCTION = (
-    "IMPORTANT: You MUST save the parsed documents now. "
-    "Call db_store_tool_results "
-    "with collection='parsed' and tool_call_ids=[the tool_call_id values from the "
-    "previous parser_parse_documents tool response]. "
-    "Extract the 'tool_call_id' field from the tool response."
-)
-
-SAVE_ANALYZE_INSTRUCTION = (
-    "IMPORTANT: You MUST save the analyzed results now. "
-    "Call db_store_tool_results "
-    "with collection='analyzed' and tool_call_ids=[the tool_call_id values from the "
-    "previous analyzer_analyze_documents tool response]. "
-    "Extract the 'tool_call_id' field from the tool response."
-)
-
 SAVE_SYNTHESIZE_INSTRUCTION = (
     "IMPORTANT: You MUST save the synthesized report now. "
     "Call db_store_tool_results "

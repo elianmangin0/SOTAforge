@@ -22,7 +22,11 @@ from sotaforge.agents import (
     search_server,
     synthesizer_server,
 )
-from sotaforge.utils.constants import MODEL
+from sotaforge.utils.constants import (
+    MAX_MESSAGE_HISTORY,
+    MAX_RETRIES,
+    MODEL,
+)
 from sotaforge.utils.logger import get_logger
 from sotaforge.utils.prompts import (
     ANALYZE_INSTRUCTION,
@@ -73,7 +77,7 @@ async def emit_progress(status: str, message: str, step: str = "") -> None:
         )
 
 
-async def _emit_tool_progress(tool_name: str, tool_args: dict) -> None:
+async def _emit_tool_progress(tool_name: str, tool_args: dict[str, Any]) -> None:
     """Emit detailed progress for specific tool executions.
 
     Args:
@@ -192,8 +196,6 @@ server.mount(db_agent.server, prefix="db")
 # Type alias for message dictionaries
 ChatMessage = Dict[str, Any]
 
-MAX_RETRIES = 3
-
 
 async def _chat_with_rate_limit_retry(
     messages: List[ChatMessage], openai_tools: list[dict[str, Any]]
@@ -254,7 +256,7 @@ def _get_last_messages(messages: List[ChatMessage], n: int = 5) -> List[ChatMess
 
 
 def _trim_message_history(
-    messages: List[ChatMessage], max_messages: int = 30
+    messages: List[ChatMessage], max_messages: int = MAX_MESSAGE_HISTORY
 ) -> List[ChatMessage]:
     """Trim message history to prevent token limit errors.
 
