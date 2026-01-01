@@ -69,10 +69,10 @@ Each stage automatically stores results in ChromaDB for the next stage to consum
 
 ### Backend
 ```bash
-pip install -e .  # or: uv sync
+uv sync
 export OPENAI_API_KEY=sk-...
 export SERPER_API_KEY=...
-python -m sotaforge.api
+uv run api
 # http://localhost:8000
 ```
 
