@@ -1,20 +1,18 @@
-# SOTAforge 🚀
+# SOTAforge
 
-> **Portfolio Project**: An intelligent research pipeline that generates comprehensive State-of-the-Art summaries using AI agents and real-time vector storage.
+An intelligent research pipeline that generates comprehensive State-of-the-Art summaries using AI agents and real-time storage.
 
 ## Project Overview
 
 SOTAforge is a full-stack application that automates the research synthesis process. Given any topic, it orchestrates a multi-stage pipeline to search, filter, analyze, and synthesize information into a coherent SOTA (State-of-the-Art) summary. Built to demonstrate modern full-stack architecture and AI integration.
 
----
-
-## 🛠️ Technologies & Architecture
+## Technologies & Architecture
 
 ### Backend
-- **FastAPI** - High-performance Python API with streaming responses (SSE)
+- **FastAPI** - High-performance Python API with streaming responses
 - **OpenAI API** - GPT-4 for LLM-powered validation and synthesis
 - **FastMCP** - Model Context Protocol for modular agent architecture
-- **ChromaDB** - Vector database for intelligent document storage and retrieval
+- **ChromaDB** - Database for document storage and retrieval
 - **Pydantic AI** - Structured LLM outputs for reliable data extraction
 - **AsyncIO** - Concurrent processing throughout the pipeline
 
@@ -25,46 +23,38 @@ SOTAforge is a full-stack application that automates the research synthesis proc
 - Modular agent design (search, filter, parse, analyze, synthesize)
 
 ### Frontend
-- **Next.js 14** - Modern React framework with TypeScript
-- **EventSource API** - Real-time progress updates from backend
-- **Tailwind CSS** - Beautiful, responsive UI
-- **Terminal-style Log Display** - Auto-scrolling, real-time progress visualization
+- **Next.js 14**
+- **EventSource API**
+- **Tailwind CSS**
+- **Terminal-style Log Display**
 
 ### Data Pipeline
 ```
 Search → Filter → Parse → Analyze → Synthesize
   ↓        ↓        ↓        ↓         ↓
  Raw   Filtered  Parsed  Analyzed  SOTA Summary
-(ChromaDB Collections)
 ```
 
 Each stage automatically stores results in ChromaDB for the next stage to consume.
 
----
+## Problem Statement
 
-## 💡 The Idea
+Staying updated on research requires reading dozens of papers and articles, a process that is time-consuming and error-prone. SOTAforge automates the synthesis through a multi-stage pipeline:
 
-**Problem**: Staying updated on research requires reading dozens of papers/articles—time-consuming and error-prone.
-
-**Solution**: Automate the synthesis:
-1. **Search**: Web + academic paper sources for the topic
-2. **Filter**: Score & keep only high-quality, relevant documents
+1. **Search**: Gather web and academic paper sources for the topic
+2. **Filter**: Score and retain only high-quality, relevant documents
 3. **Parse**: Extract full text from PDFs and web pages
-4. **Analyze**: Use AI to identify themes, trends, challenges, opportunities
+4. **Analyze**: Use AI to identify themes, trends, challenges, and opportunities
 5. **Synthesize**: Generate a polished SOTA report
 
-All orchestrated by an LLM that validates each step with automatic retries.
+An LLM orchestrator validates each step with automatic retries, delivering comprehensive research summaries in minutes.
 
-**Result**: Comprehensive research summaries in minutes, not hours.
-
----
-
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 - Python 3.10+, Node.js 18+
 - OpenAI API key
-- Serper API key (web/paper search)
+- Serper API key
 
 ### Backend
 ```bash
@@ -83,42 +73,26 @@ npm run dev
 # http://localhost:3000
 ```
 
----
+## Next Steps
 
-## 🎯 Key Features
+Potential enhancements to take this project further:
 
-✅ Real-time Progress Streaming (watch pipeline execute step-by-step)  
-✅ LLM-Orchestrated Pipeline (AI validates each step with retries)  
-✅ Vector Database Integration (intelligent document storage/retrieval)  
-✅ Modular Agent Architecture (each stage is independent MCP server)  
-✅ Token-Aware Processing (auto-trims message history)  
-✅ Production-Ready Error Handling (graceful failures, detailed logging)  
+### Production Readiness
+- Deploy backend with Docker and orchestration
+- Add authentication and rate limiting for API endpoints
+- Implement distributed task queue for background processing
+- Set up monitoring and observability
+- Add comprehensive test coverage and CI/CD pipelines
 
----
+### Enhanced Search Coverage
+- Generate multiple search queries from the base topic using LLM query expansion
+- Implement semantic query diversification to capture different angles
+- Add cross-language search capabilities
+- Support domain-specific search engines (arXiv, PubMed, IEEE Xplore)
 
-## 📈 What This Demonstrates
+### Improved Parsing Performance
+- Deploy GPU-accelerated document parsing with specialized models or use Vision Language Models (VLM) via API for quicker and better parsing
+- Implement parallel parsing with distributed workers
+- Add support for complex document formats (equations, diagrams, charts)
 
-- Full-stack integration with real-time SSE streaming
-- AI/LLM orchestration with validation loops
-- Vector database practical usage
-- Async Python with high concurrency
-- Modern frontend with real-time updates
-- Production patterns: rate-limiting, error recovery, optimization
-- Clean API design (REST + streaming)
 
----
-
-## 📝 API
-
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/api/sota` | POST | `{ "topic": "..." }` - Start SOTA generation |
-| `/api/sota/stream/{task_id}` | GET | SSE stream of real-time progress |
-
----
-
-## 📄 License
-
-Portfolio project. Feel free to use as reference or extend.
-
-**Built with** ❤️ to showcase modern AI + full-stack development.
