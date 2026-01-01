@@ -6,6 +6,26 @@ An intelligent research pipeline that generates comprehensive State-of-the-Art s
 
 SOTAforge is a full-stack application that automates the research synthesis process. Given any topic, it orchestrates a multi-stage pipeline to search, filter, analyze, and synthesize information into a coherent SOTA (State-of-the-Art) summary. Built to demonstrate modern full-stack architecture and AI integration.
 
+
+## Problem Statement
+
+Staying updated on research requires reading dozens of papers and articles, a process that is time-consuming and error-prone. SOTAforge automates the synthesis through a multi-stage pipeline:
+
+1. **Search**: Gather web and academic paper sources for the topic
+2. **Filter**: Score and retain only high-quality, relevant documents
+3. **Parse**: Extract full text from PDFs and web pages
+4. **Analyze**: Use AI to identify themes, trends, challenges, and opportunities
+5. **Synthesize**: Generate a polished SOTA report
+
+An LLM orchestrator validates each step with automatic retries, delivering comprehensive research summaries in minutes.
+
+## Demo
+
+https://github.com/user-attachments/assets/49106f4c-3f99-4f4e-887d-4b74f9a4783e
+
+Parsing step has been edited out since it is a bit long with docling on cpu.
+
+
 ## Technologies & Architecture
 
 ### Backend
@@ -28,6 +48,9 @@ SOTAforge is a full-stack application that automates the research synthesis proc
 - **Tailwind CSS**
 - **Terminal-style Log Display**
 
+
+
+
 ### Data Pipeline
 ```
 Search → Filter → Parse → Analyze → Synthesize
@@ -36,18 +59,6 @@ Search → Filter → Parse → Analyze → Synthesize
 ```
 
 Each stage automatically stores results in ChromaDB for the next stage to consume.
-
-## Problem Statement
-
-Staying updated on research requires reading dozens of papers and articles, a process that is time-consuming and error-prone. SOTAforge automates the synthesis through a multi-stage pipeline:
-
-1. **Search**: Gather web and academic paper sources for the topic
-2. **Filter**: Score and retain only high-quality, relevant documents
-3. **Parse**: Extract full text from PDFs and web pages
-4. **Analyze**: Use AI to identify themes, trends, challenges, and opportunities
-5. **Synthesize**: Generate a polished SOTA report
-
-An LLM orchestrator validates each step with automatic retries, delivering comprehensive research summaries in minutes.
 
 ## Quick Start
 
