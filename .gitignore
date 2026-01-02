@@ -1,0 +1,12 @@
+
+logs/*
+__pycache__/
+*.py[cod]
+*$py.class
+.doit.*
+results.txt
+data/*
+
+frontend/node_modules/
+frontend/.next/
+frontend/.env*.local
