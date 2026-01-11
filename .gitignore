@@ -6,7 +6,7 @@ __pycache__/
 .doit.*
 results.txt
 data/*
-
+.env.secrets
 frontend/node_modules/
 frontend/.next/
 frontend/.env*.local

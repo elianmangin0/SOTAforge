@@ -1,4 +1,4 @@
-"""Automatisation of dev tasks."""
+"""Automation of dev tasks."""
 
 from typing import Any
 

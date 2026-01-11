@@ -4,8 +4,9 @@ from typing import Any, Dict
 
 from fastmcp import FastMCP
 
-from sotaforge.utils.dataclasses import Document, NotParsedDocument
+from sotaforge.utils.dataclasses import NotParsedDocument, ParsedDocument
 from sotaforge.utils.db import ChromaStore
+from sotaforge.utils.errors import ParsingError
 from sotaforge.utils.logger import get_logger
 from sotaforge.utils.parsing import parse_paper_result, parse_web_result
 
@@ -65,16 +66,18 @@ async def parse_documents(
         # Convert to NotParsedDocument if needed
         if isinstance(doc, NotParsedDocument):
             not_parsed = doc
-        elif isinstance(doc, Document):
+        elif isinstance(doc, ParsedDocument):
             # Already parsed, skip or convert to NotParsedDocument for re-parsing
             logger.debug(
                 f"Document '{doc.title}' already has text : {doc.text}, skipping parse"
             )
             parsed_docs.append(doc)
             continue
-        else:
+        elif isinstance(doc, dict):
             doc_dict = doc if isinstance(doc, dict) else doc.to_dict()
             not_parsed = NotParsedDocument.from_dict(doc_dict)
+        else:
+            raise ParsingError(f"Unsupported document type: {type(doc)}")
 
         try:
             # Use appropriate parser based on source type
@@ -89,7 +92,9 @@ async def parse_documents(
             logger.warning(f"Failed to parse {not_parsed.url}: {e}")
             # Keep document even if parsing fails, just without text
             parsed_docs.append(
-                Document.from_not_parsed(not_parsed, text="Failed to parse content.")
+                ParsedDocument.from_not_parsed(
+                    not_parsed, text="Failed to parse content."
+                )
             )
 
     logger.info(f"Successfully parsed {len(parsed_docs)}/{len(documents)} documents")

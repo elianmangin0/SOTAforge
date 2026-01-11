@@ -12,14 +12,32 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Any, Dict
 
+from dotenv import load_dotenv
 from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
+from sotaforge.utils.constants import (
+    ALLOWED_ORIGINS,
+    API_DESCRIPTION,
+    API_HOST,
+    API_PORT,
+    API_TITLE,
+)
 from sotaforge.utils.logger import get_logger
 
+# Load environment variables from .env.secrets file
+load_dotenv(".env.secrets")
+
 logger = get_logger(__name__)
+
+try:
+    from importlib.metadata import version
+
+    __version__ = version("sotaforge")
+except Exception:
+    __version__ = "0.1.0"
 
 # In-memory task storage with progress tracking
 tasks: Dict[str, Dict[str, Any]] = {}
@@ -51,20 +69,16 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 # Initialize FastAPI app
 app = FastAPI(
-    title="SOTAforge API",
-    description="REST API for generating State-of-the-Art research summaries",
-    version="0.1.0",
+    title=API_TITLE,
+    description=API_DESCRIPTION,
+    version=__version__,
     lifespan=lifespan,
 )
 
 # Configure CORS - CRITICAL for Next.js frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",  # Next.js default dev server
-        "http://localhost:3001",
-        "http://127.0.0.1:3000",
-    ],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],  # Allow all methods (GET, POST, etc.)
     allow_headers=["*"],  # Allow all headers
@@ -77,7 +91,7 @@ async def root() -> Dict[str, str]:
     return {
         "message": "SOTAforge API is running",
         "status": "healthy",
-        "version": "0.1.0",
+        "version": __version__,
     }
 
 
@@ -342,8 +356,8 @@ def main() -> None:
 
     uvicorn.run(
         "sotaforge.api:app",
-        host="0.0.0.0",
-        port=8000,
+        host=API_HOST,
+        port=API_PORT,
         reload=True,  # Auto-reload on code changes (dev only)
     )
 

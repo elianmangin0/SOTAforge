@@ -25,6 +25,12 @@ class ExtractionError(SOTAError):
     pass
 
 
+class ParsingError(SOTAError):
+    """Raised when document parsing fails."""
+
+    pass
+
+
 class FilterError(SOTAError):
     """Raised when filtering candidates fails."""
 

@@ -7,20 +7,21 @@ import requests
 import trafilatura
 from docling.document_converter import DocumentConverter
 
-from sotaforge.utils.dataclasses import Document, NotParsedDocument
+from sotaforge.utils.constants import REQUEST_TIMEOUT_PDF, REQUEST_TIMEOUT_WEB
+from sotaforge.utils.dataclasses import NotParsedDocument, ParsedDocument
 from sotaforge.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-async def parse_web_result(result: NotParsedDocument) -> Document:
+async def parse_web_result(result: NotParsedDocument) -> ParsedDocument:
     """Parse a web result and extract full text content.
 
     Args:
         result: NotParsedDocument with title, url, snippet
 
     Returns:
-        Document with parsed text and metadata
+        ParsedDocument with parsed text and metadata
 
     """
     logger.info(f"Parsing web result: {result.url}")
@@ -31,7 +32,7 @@ async def parse_web_result(result: NotParsedDocument) -> Document:
     try:
         response = requests.get(
             result.url,
-            timeout=10,
+            timeout=REQUEST_TIMEOUT_WEB,
             headers={"User-Agent": "Mozilla/5.0 (SOTAforge)"},
         )
         response.raise_for_status()
@@ -55,22 +56,22 @@ async def parse_web_result(result: NotParsedDocument) -> Document:
         logger.warning(f"Failed to fetch/parse content from {result.url}: {e}")
         logger.info("Using snippet as fallback")
 
-    # Create Document from NotParsedDocument with parsed text
-    return Document.from_not_parsed(
+    # Create ParsedDocument from NotParsedDocument with parsed text
+    return ParsedDocument.from_not_parsed(
         result,
         text=text,
         summary=result.snippet,
     )
 
 
-async def parse_paper_result(result: NotParsedDocument) -> Document:
-    """Parse a paper result and extract full text content.
+async def parse_paper_result(result: NotParsedDocument) -> ParsedDocument:
+    """Parse a paper result and extract text from PDF.
 
     Args:
         result: NotParsedDocument with paper metadata
 
     Returns:
-        Document with parsed text and metadata
+        ParsedDocument with parsed text and metadata
 
     """
     logger.info(f"Parsing paper result: {result.title}")
@@ -91,7 +92,7 @@ async def parse_paper_result(result: NotParsedDocument) -> Document:
             # Download PDF to temporary file
             response = requests.get(
                 pdf_url,
-                timeout=30,
+                timeout=REQUEST_TIMEOUT_PDF,
                 headers={"User-Agent": "Mozilla/5.0 (SOTAforge)"},
             )
             response.raise_for_status()
@@ -123,7 +124,7 @@ async def parse_paper_result(result: NotParsedDocument) -> Document:
             # Try to fetch from the URL
             response = requests.get(
                 result.url,
-                timeout=10,
+                timeout=REQUEST_TIMEOUT_WEB,
                 headers={"User-Agent": "Mozilla/5.0 (SOTAforge)"},
             )
             response.raise_for_status()
@@ -158,8 +159,8 @@ async def parse_paper_result(result: NotParsedDocument) -> Document:
         logger.warning(f"Failed to fetch/parse full paper from {result.url}: {e}")
         logger.info("Using abstract as fallback")
 
-    # Create Document from NotParsedDocument with parsed text
-    return Document.from_not_parsed(
+    # Create ParsedDocument from NotParsedDocument with parsed text
+    return ParsedDocument.from_not_parsed(
         result,
         text=text,
         summary=result.abstract,

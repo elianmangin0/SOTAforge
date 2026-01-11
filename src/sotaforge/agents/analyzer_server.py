@@ -6,7 +6,11 @@ from fastmcp import FastMCP
 from pydantic_ai import Agent
 
 from sotaforge.utils.constants import ANALYZER_SYSTEM_PROMPT, PYDANTIC_AI_MODEL
-from sotaforge.utils.dataclasses import Document, NotParsedDocument, ThemesAndInsights
+from sotaforge.utils.dataclasses import (
+    NotParsedDocument,
+    ParsedDocument,
+    ThemesAndInsights,
+)
 from sotaforge.utils.db import ChromaStore
 from sotaforge.utils.logger import get_logger
 
@@ -58,13 +62,13 @@ async def analyze_documents(
         document_to_process_collection,
     )
 
-    analyzed_docs: List[Document] = []
+    analyzed_docs: List[ParsedDocument] = []
 
     for doc in documents:
-        # Ensure doc is a Document instance
+        # Ensure doc is a ParsedDocument instance
         if isinstance(doc, NotParsedDocument):
-            document = Document.from_not_parsed(doc)
-        elif isinstance(doc, Document):
+            document = ParsedDocument.from_not_parsed(doc)
+        elif isinstance(doc, ParsedDocument):
             document = doc
         else:
             logger.warning(f"Skipping document of unknown type: {type(doc)}")

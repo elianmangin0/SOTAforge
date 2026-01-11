@@ -1,16 +1,25 @@
 """Data classes for SOTAforge."""
 
 from dataclasses import asdict, dataclass, field
-from typing import Any, Dict, List, Mapping, Union
+from enum import Enum
+from typing import Any, Dict, List, Mapping, Self, Union
+
+
+class SourceType(str, Enum):
+    """Source type enumeration for documents."""
+
+    WEB = "web"
+    PAPER = "paper"
+    UNKNOWN = "unknown"
 
 
 @dataclass
-class NotParsedDocument:
-    """Document before parsing - contains metadata but no extracted text."""
+class Document:
+    """Base document class with common fields across pipeline stages."""
 
     title: str
     url: str = ""
-    source_type: str = "unknown"  # "web" or "paper"
+    source_type: SourceType = SourceType.UNKNOWN
 
     # Search stage fields (available before parsing)
     snippet: str = ""  # for web results
@@ -27,12 +36,23 @@ class NotParsedDocument:
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, data: Mapping[str, Any]) -> "NotParsedDocument":
+    def _parse_source_type(cls, source_type_str: str) -> SourceType:
+        """Parse source type string to enum, defaulting to UNKNOWN."""
+        return (
+            SourceType(source_type_str)
+            if source_type_str in {st.value for st in SourceType}
+            else SourceType.UNKNOWN
+        )
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> Self:
         """Create from a mapping, filling missing fields with defaults."""
+        source_type_str = data.get("source_type", "unknown")
+        source_type = cls._parse_source_type(source_type_str)
         return cls(
             title=data.get("title", ""),
             url=data.get("url", ""),
-            source_type=data.get("source_type", "unknown"),
+            source_type=source_type,
             snippet=data.get("snippet", ""),
             abstract=data.get("abstract", ""),
             authors=list(data.get("authors", []) or []),
@@ -43,19 +63,15 @@ class NotParsedDocument:
 
 
 @dataclass
-class Document:
-    """Unified document that evolves through the pipeline (fully parsed)."""
+class NotParsedDocument(Document):
+    """Document before parsing - contains metadata but no extracted text."""
 
-    title: str
-    url: str = ""
-    source_type: str = "unknown"  # "web" or "paper"
+    pass
 
-    # Search stage fields
-    snippet: str = ""  # for web results
-    abstract: str = ""  # for papers
-    authors: List[str] = field(default_factory=list)  # for papers
-    year: int = 0  # for papers
-    venue: str = ""  # for papers
+
+@dataclass
+class ParsedDocument(Document):
+    """Fully parsed document that evolved through the pipeline."""
 
     # Parse stage fields
     text: str = ""  # full extracted content
@@ -63,13 +79,6 @@ class Document:
     # Analysis stage fields
     themes: List[str] = field(default_factory=list)
     insights: List[str] = field(default_factory=list)
-
-    # Generic metadata that can hold any enrichment
-    metadata: Dict[str, Union[str, int, List[str]]] = field(default_factory=dict)
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert this Document into a JSON-serializable dict."""
-        return asdict(self)
 
     def to_dict_with_text_limit(self, char_limit: int) -> Dict[str, Any]:
         """Convert to dict, limiting text field to char_limit characters."""
@@ -79,12 +88,14 @@ class Document:
         return doc_dict
 
     @classmethod
-    def from_dict(cls, data: Mapping[str, Any]) -> "Document":
-        """Create a Document from a mapping, filling missing fields with defaults."""
+    def from_dict(cls, data: Mapping[str, Any]) -> "ParsedDocument":
+        """Create a ParsedDocument from a mapping, filling missing with defaults."""
+        source_type_str = data.get("source_type", "unknown")
+        source_type = cls._parse_source_type(source_type_str)
         return cls(
             title=data.get("title", ""),
             url=data.get("url", ""),
-            source_type=data.get("source_type", "unknown"),
+            source_type=source_type,
             snippet=data.get("snippet", ""),
             abstract=data.get("abstract", ""),
             authors=list(data.get("authors", []) or []),
@@ -99,8 +110,8 @@ class Document:
     @classmethod
     def from_not_parsed(
         cls, not_parsed: NotParsedDocument, **updates: Any
-    ) -> "Document":
-        """Create a Document from a NotParsedDocument, adding parse-stage fields."""
+    ) -> "ParsedDocument":
+        """Create a ParsedDocument from a NotParsedDocument, adding fields."""
         return cls(
             title=not_parsed.title,
             url=not_parsed.url,

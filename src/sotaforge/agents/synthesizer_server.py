@@ -14,7 +14,7 @@ from sotaforge.utils.constants import (
     SYNTHESIZER_PROMPT,
     SYNTHESIZER_SYSTEM_PROMPT,
 )
-from sotaforge.utils.dataclasses import Document
+from sotaforge.utils.dataclasses import ParsedDocument
 from sotaforge.utils.db import ChromaStore
 from sotaforge.utils.logger import get_logger
 
@@ -45,8 +45,8 @@ async def write_sota(collection: str) -> Dict[str, Union[str, str]]:
 
     logger.info(f"Writing SOTA from {len(documents)} analyzed documents")
 
-    # Filter only Document instances (not NotParsedDocument)
-    analyzed_docs = [doc for doc in documents if isinstance(doc, Document)]
+    # Filter only ParsedDocument instances (not NotParsedDocument)
+    analyzed_docs = [doc for doc in documents if isinstance(doc, ParsedDocument)]
 
     # Format documents with sources
     docs_content = "\n\n".join(

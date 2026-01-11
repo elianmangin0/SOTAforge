@@ -8,12 +8,27 @@ MAX_RESULTS = 10
 MAX_ORCHESTRATOR_MESSAGES = 80
 CHROMA_PATH = "data/chroma"
 
+# API Configuration
+API_HOST = "0.0.0.0"
+API_PORT = 8000
+API_TITLE = "SOTAforge API"
+API_DESCRIPTION = "REST API for generating State-of-the-Art research summaries"
+ALLOWED_ORIGINS = [
+    "http://localhost:3000",  # Next.js default dev server
+    "http://localhost:3001",
+    "http://127.0.0.1:3000",
+]
+
 # Pipeline tuning constants
 MAX_MESSAGE_HISTORY = 30  # Trim message history to prevent token overages
 DOC_TEXT_LIMIT_FULL = 3000  # Character limit for full document text storage
 DOC_TEXT_LIMIT_RETURN = 800  # Character limit for document text in LLM responses
 ANALYZER_PROMPT_TEXT_LIMIT = 1200  # Character limit for analyzer prompt context
 MAX_RETRIES = 3  # Maximum validation retries per pipeline step
+
+# Request timeouts (in seconds)
+REQUEST_TIMEOUT_WEB = 10  # Timeout for fetching web pages
+REQUEST_TIMEOUT_PDF = 30  # Timeout for fetching PDF files
 
 
 # Collection names

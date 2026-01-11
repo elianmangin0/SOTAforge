@@ -13,7 +13,7 @@ from chromadb.api.models.Collection import Collection
 from chromadb.utils.embedding_functions import EmbeddingFunction
 
 from sotaforge.utils.constants import CHROMA_PATH
-from sotaforge.utils.dataclasses import Document, NotParsedDocument
+from sotaforge.utils.dataclasses import Document, NotParsedDocument, ParsedDocument
 from sotaforge.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -73,11 +73,11 @@ class ChromaStore:
         )
 
     def upsert_documents(
-        self, collection: str, documents: Iterable[Document | NotParsedDocument]
+        self, collection: str, documents: Iterable[Document]
     ) -> List[str]:
-        """Upsert pipeline Document or NotParsedDocument objects directly.
+        """Upsert pipeline ParsedDocument or NotParsedDocument objects directly.
 
-        This simplifies callers: pass Document or NotParsedDocument instances
+        This simplifies callers: pass ParsedDocument or NotParsedDocument instances
         and let the store derive ids, document text, metadata and payload.
         """
         items = list(documents)
@@ -88,9 +88,9 @@ class ChromaStore:
         ids = [str(uuid4()) for _ in items]
         docs = []
         for d in items:
-            # For Document, use text; for NotParsedDocument, use
+            # For ParsedDocument, use text; for NotParsedDocument, use
             # summary/snippet/abstract
-            if isinstance(d, Document):
+            if isinstance(d, ParsedDocument):
                 doc_text = d.text
             else:  # NotParsedDocument
                 doc_text = ""
@@ -110,15 +110,15 @@ class ChromaStore:
 
     def fetch_documents(
         self, collection: str, limit: int | None = None
-    ) -> List[Document | NotParsedDocument]:
+    ) -> List[Document]:
         """Fetch all documents from a collection.
 
         Args:
-            collection: The collection name to fetch from
+            collection: Name of the ChromaDB collection to fetch from
             limit: Optional limit on number of documents to retrieve
 
         Returns:
-            List of Document or NotParsedDocument instances
+            List of ParsedDocument or NotParsedDocument instances
 
         """
         col = self.get_collection(collection)
@@ -128,7 +128,7 @@ class ChromaStore:
             logger.debug(f"No documents found in collection '{collection}'")
             return []
 
-        documents: list[Document | NotParsedDocument] = []
+        documents: list[Document] = []
         for i in range(len(results["ids"])):
             logger.debug(f"Reconstructing document {i} from fetched results")
             logger.debug(f"Results : {results}")
@@ -158,13 +158,13 @@ class ChromaStore:
             if doc_text:
                 doc_dict["text"] = doc_text
 
-            # Return Document if has text, otherwise NotParsedDocument
+            # Return ParsedDocument if has text, otherwise NotParsedDocument
             if doc_dict.get("text") and isinstance(doc_dict.get("text"), str):
                 logger.debug(
                     f"Document {doc_dict.get('title', 'unknown')} has text : "
                     f"{doc_dict.get('text')[:100]}..."  # type: ignore[index]
                 )
-                documents.append(Document.from_dict(doc_dict))
+                documents.append(ParsedDocument.from_dict(doc_dict))
             else:
                 documents.append(NotParsedDocument.from_dict(doc_dict))
 

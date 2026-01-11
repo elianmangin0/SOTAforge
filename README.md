@@ -6,6 +6,20 @@ An intelligent research pipeline that generates comprehensive State-of-the-Art s
 
 SOTAforge is a full-stack application that automates the research synthesis process. Given any topic, it orchestrates a multi-stage pipeline to search, filter, analyze, and synthesize information into a coherent SOTA (State-of-the-Art) summary. Built to demonstrate modern full-stack architecture and AI integration.
 
+## Table of Contents
+- [Problem Statement](#problem-statement)
+- [Demo](#demo)
+- [Technologies & Architecture](#technologies--architecture)
+  - [Backend](#backend)
+  - [Frontend](#frontend)
+  - [Data Pipeline](#data-pipeline)
+- [Quick Start](#quick-start)
+  - [Prerequisites](#prerequisites)
+  - [Backend](#backend-1)
+  - [Frontend](#frontend-1)
+- [Next Steps](#next-steps)
+  - [Production Readiness](#production-readiness)
+  - [Enhanced Search Coverage](#enhanced-search-coverage)
 
 ## Problem Statement
 
@@ -63,18 +77,18 @@ Each stage automatically stores results in ChromaDB for the next stage to consum
 ## Quick Start
 
 ### Prerequisites
-- Python 3.10+, Node.js 18+
+- Python 3.12+, Node.js 18+
 - OpenAI API key
 - Serper API key
 
 ### Backend
 ```bash
 uv sync
-export OPENAI_API_KEY=sk-...
-export SERPER_API_KEY=...
 uv run api
 # http://localhost:8000
 ```
+
+Create a `.env.secrets` file based on `.env.secrets.template` and add your API keys.
 
 ### Frontend
 ```bash

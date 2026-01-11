@@ -9,7 +9,7 @@ import requests
 from fastmcp import FastMCP
 
 from sotaforge.utils.constants import ARXIV_API, MAX_RESULTS, SERPER_URL
-from sotaforge.utils.dataclasses import NotParsedDocument
+from sotaforge.utils.dataclasses import NotParsedDocument, SourceType
 from sotaforge.utils.errors import ConfigurationError, SearchError
 from sotaforge.utils.logger import get_logger
 
@@ -88,7 +88,7 @@ async def search_web(
                         title=item.get("title", "No title"),
                         url=item.get("link", ""),
                         snippet=item.get("snippet", "No snippet available"),
-                        source_type="web",
+                        source_type=SourceType.WEB,
                     )
                 )
                 logger.debug(f"Found: {item.get('link', '')}")
@@ -181,7 +181,7 @@ async def search_papers(
                 venue=venue,
                 abstract=summary,
                 url=link,
-                source_type="paper",
+                source_type=SourceType.PAPER,
             )
         )
         logger.debug(f"Found: {link}")

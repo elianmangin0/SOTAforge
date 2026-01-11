@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 
 from fastmcp import FastMCP
 
-from sotaforge.utils.dataclasses import Document, NotParsedDocument
+from sotaforge.utils.dataclasses import Document, NotParsedDocument, ParsedDocument
 from sotaforge.utils.db import ChromaStore
 from sotaforge.utils.errors import DatabaseError
 from sotaforge.utils.logger import get_logger
@@ -20,17 +20,18 @@ store = ChromaStore()
 
 def _parse_documents_from_dict(
     items: List[Dict[str, Any]],
-) -> list[Document | NotParsedDocument]:
-    """Check if all items in the list can be parsed as Document or NotParsedDocument."""
+) -> list[Document]:
+    """Parse a list of dicts into ParsedDocument or NotParsedDocument instances."""
     if not all(isinstance(item, dict) for item in items):
         raise DatabaseError("All items must be dictionaries")
     if all("text" in item and isinstance(item["text"], str) for item in items):
-        return [Document.from_dict(item) for item in items]
+        return [ParsedDocument.from_dict(item) for item in items]
     elif all("text" not in item for item in items):
         return [NotParsedDocument.from_dict(item) for item in items]
     else:
         raise DatabaseError(
-            "The list provided must contain either all Document items with 'text' field"
+            "The list provided must contain either"
+            " all ParsedDocument items with 'text' field"
             " or all NotParsedDocument items without 'text' field."
         )
 
