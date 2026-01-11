@@ -5,14 +5,15 @@ from typing import Any, Dict, List
 from fastmcp import FastMCP
 from pydantic_ai import Agent
 
-from sotaforge.utils.constants import ANALYZER_SYSTEM_PROMPT, PYDANTIC_AI_MODEL
-from sotaforge.utils.dataclasses import (
+from sotaforge.utils.constants import ANALYZER_PROMPT_TEXT_LIMIT, PYDANTIC_AI_MODEL
+from sotaforge.utils.db import ChromaStore
+from sotaforge.utils.logger import get_logger
+from sotaforge.utils.models import (
     NotParsedDocument,
     ParsedDocument,
     ThemesAndInsights,
 )
-from sotaforge.utils.db import ChromaStore
-from sotaforge.utils.logger import get_logger
+from sotaforge.utils.prompts import ANALYZER_SYSTEM_PROMPT
 
 logger = get_logger(__name__)
 server = FastMCP("analyzer")
@@ -81,7 +82,7 @@ async def analyze_documents(
             f"Title: {document.title}\n"
             f"Source Type: {document.source_type}\n\n"
             # Keep prompt context short to avoid token overages
-            f"Document text (truncated):\n{document.text[:1200]}"
+            f"Document text (truncated):\n{document.text[:ANALYZER_PROMPT_TEXT_LIMIT]}"
         )
 
         try:

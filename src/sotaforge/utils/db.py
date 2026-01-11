@@ -13,8 +13,8 @@ from chromadb.api.models.Collection import Collection
 from chromadb.utils.embedding_functions import EmbeddingFunction
 
 from sotaforge.utils.constants import CHROMA_PATH
-from sotaforge.utils.dataclasses import Document, NotParsedDocument, ParsedDocument
 from sotaforge.utils.logger import get_logger
+from sotaforge.utils.models import Document, NotParsedDocument, ParsedDocument
 
 logger = get_logger(__name__)
 

@@ -9,9 +9,9 @@ import requests
 from fastmcp import FastMCP
 
 from sotaforge.utils.constants import ARXIV_API, MAX_RESULTS, SERPER_URL
-from sotaforge.utils.dataclasses import NotParsedDocument, SourceType
 from sotaforge.utils.errors import ConfigurationError, SearchError
 from sotaforge.utils.logger import get_logger
+from sotaforge.utils.models import NotParsedDocument, SourceType
 
 logger = get_logger(__name__)
 server = FastMCP("search")

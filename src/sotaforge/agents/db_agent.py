@@ -8,10 +8,10 @@ from typing import Any, Dict, List, Optional
 
 from fastmcp import FastMCP
 
-from sotaforge.utils.dataclasses import Document, NotParsedDocument, ParsedDocument
 from sotaforge.utils.db import ChromaStore
 from sotaforge.utils.errors import DatabaseError
 from sotaforge.utils.logger import get_logger
+from sotaforge.utils.models import Document, NotParsedDocument, ParsedDocument
 
 logger = get_logger(__name__)
 server = FastMCP("db")

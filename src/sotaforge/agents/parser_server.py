@@ -1,18 +1,23 @@
 """Parser server for extracting and parsing documents from search results."""
 
+import asyncio
 from typing import Any, Dict
 
 from fastmcp import FastMCP
 
-from sotaforge.utils.dataclasses import NotParsedDocument, ParsedDocument
+from sotaforge.utils.constants import MAX_CONCURRENT_PARSING_REQUESTS
 from sotaforge.utils.db import ChromaStore
 from sotaforge.utils.errors import ParsingError
 from sotaforge.utils.logger import get_logger
+from sotaforge.utils.models import NotParsedDocument, ParsedDocument
 from sotaforge.utils.parsing import parse_paper_result, parse_web_result
 
 logger = get_logger(__name__)
 server = FastMCP("parser")
 db_store = ChromaStore()
+
+# Semaphore to limit concurrent document parsing
+_parsing_semaphore = asyncio.Semaphore(MAX_CONCURRENT_PARSING_REQUESTS)
 
 
 @server.tool(
@@ -60,42 +65,46 @@ async def parse_documents(
         document_to_process_collection,
     )
 
-    # Step 2: Parse each document
-    parsed_docs = []
-    for doc in documents:
-        # Convert to NotParsedDocument if needed
-        if isinstance(doc, NotParsedDocument):
-            not_parsed = doc
-        elif isinstance(doc, ParsedDocument):
-            # Already parsed, skip or convert to NotParsedDocument for re-parsing
-            logger.debug(
-                f"Document '{doc.title}' already has text : {doc.text}, skipping parse"
-            )
-            parsed_docs.append(doc)
-            continue
-        elif isinstance(doc, dict):
-            doc_dict = doc if isinstance(doc, dict) else doc.to_dict()
-            not_parsed = NotParsedDocument.from_dict(doc_dict)
-        else:
-            raise ParsingError(f"Unsupported document type: {type(doc)}")
+    # Step 2: Parse all documents in parallel
+    logger.info(f"Parsing {len(documents)} documents in parallel")
 
-        try:
-            # Use appropriate parser based on source type
-            if not_parsed.source_type == "paper":
-                parsed_doc = await parse_paper_result(not_parsed)
-            else:  # web
-                parsed_doc = await parse_web_result(not_parsed)
+    async def parse_document(doc: Any) -> ParsedDocument:
+        """Parse a single document."""
+        async with _parsing_semaphore:
+            # Convert to NotParsedDocument if needed
+            if isinstance(doc, NotParsedDocument):
+                not_parsed = doc
+            elif isinstance(doc, ParsedDocument):
+                # Already parsed, return as-is
+                logger.debug(
+                    f"Document '{doc.title}' already has"
+                    f" text: {doc.text}, skipping parse"
+                )
+                return doc
+            elif isinstance(doc, dict):
+                doc_dict = doc if isinstance(doc, dict) else doc.to_dict()
+                not_parsed = NotParsedDocument.from_dict(doc_dict)
+            else:
+                raise ParsingError(f"Unsupported document type: {type(doc)}")
 
-            parsed_docs.append(parsed_doc)
-            logger.debug(f"Parsed: {not_parsed.url}")
-        except Exception as e:
-            logger.warning(f"Failed to parse {not_parsed.url}: {e}")
-            # Keep document even if parsing fails, just without text
-            parsed_docs.append(
-                ParsedDocument.from_not_parsed(
+            try:
+                # Use appropriate parser based on source type
+                if not_parsed.source_type == "paper":
+                    parsed_doc = await parse_paper_result(not_parsed)
+                else:  # web
+                    parsed_doc = await parse_web_result(not_parsed)
+
+                logger.debug(f"Parsed: {not_parsed.url}")
+                return parsed_doc
+            except Exception as e:
+                logger.warning(f"Failed to parse {not_parsed.url}: {e}")
+                # Keep document even if parsing fails, just without text
+                return ParsedDocument.from_not_parsed(
                     not_parsed, text="Failed to parse content."
                 )
-            )
+
+    # Parse all documents in parallel
+    parsed_docs = await asyncio.gather(*[parse_document(doc) for doc in documents])
 
     logger.info(f"Successfully parsed {len(parsed_docs)}/{len(documents)} documents")
 

@@ -1,13 +1,92 @@
 """Prompt definitions for orchestrator pipeline steps and validations."""
 
-# System prompt guiding the orchestrator's role
+PDF_PARSING_PROMPT = """You are a text extraction assistant.
+Extract all the text content from the PDF page image.
+
+Focus on:
+- Main body text (paragraphs, sections)
+- Headings and titles
+- Key findings and results
+- Tables and figures (describe their content)
+- References (if present)
+- List items and bullet points
+
+Ignore:
+- Page numbers
+- Headers/footers
+- Watermarks
+- Decorative elements
+
+Format the extracted text in a clear, readable markdown format. 
+Preserve the logical structure and flow of the document.
+Maintain continuity between pages when combining text.
+Prioritize the main content over sidebars or supplementary information.
+
+RETURN ONLY THE EXTRACTED TEXT, DO NOT RETURN ANY EXTRA COMMENTS OR FORMATTING.
+"""
+
 ORCHESTRATOR_SYSTEM_PROMPT = (
     "You validate individual pipeline steps. Python runs the fixed workflow. "
     "Only use tools to perform the current step. Be concise."
 )
 
-# Validation prompt used for each step
-# Instruct the LLM to either APPROVE or redo by calling a tool.
+ANALYZER_SYSTEM_PROMPT = """
+You are an expert research analyst specializing in extracting 
+key insights from academic and technical documents.
+
+Your task is to analyze documents and identify:
+- Key trends and emerging patterns
+- Technical challenges and limitations
+- Research opportunities and future directions
+- Methodological approaches
+- Important findings and contributions
+
+Provide clear, concise themes formatted as "Category: Description" where 
+category is one of: Trend, Challenge, Opportunity, Method, Finding.
+"""
+
+SYNTHESIZER_SYSTEM_PROMPT = """
+You are an expert technical writer specializing in state-of-the-art reviews.
+"""
+
+SYNTHESIZER_PROMPT = """
+You are an expert technical writer specializing in state-of-the-art reviews. 
+Generate a comprehensive, well-structured SOTA document.
+
+Structure your response with these sections:
+
+## 1. Introduction
+Brief context and significance of the topic.
+
+## 2. Core Technologies & Approaches
+Key technologies, methodologies, and architectural approaches currently used.
+
+## 3. Best Practices
+Industry and research best practices, design patterns, and recommendations.
+
+## 4. Challenges & Limitations
+Current challenges, bottlenecks, and known limitations in the field.
+
+## 5. Emerging Trends
+Recent trends, innovations, and cutting-edge developments.
+
+## 6. Research Opportunities
+Open problems and promising research directions.
+
+## 7. Sources & References
+Key sources, papers, and resources that informed this analysis.
+Use the following format for references:
+- [Title](URL) - Brief description of the source.
+
+## 8. Conclusion
+Summary and outlook for the field.
+
+Format the response in Markdown. 
+Include specific technologies, frameworks, and tools mentioned in the source materials.
+
+Here are the analyzed documents to base your synthesis on:
+"""
+
 VALIDATION_PROMPT = (
     "You are reviewing the result of the last pipeline step. "
     "If it looks good, respond exactly: APPROVE. "
@@ -16,7 +95,6 @@ VALIDATION_PROMPT = (
     "respond: REDO. Do not provide explanations."
 )
 
-# Step instructions
 SEARCH_INSTRUCTION = (
     "Perform searches to find relevant documents. Research topic: {topic}. "
     "Use both web and academic paper search tools."
@@ -57,7 +135,6 @@ SYNTHESIZE_INSTRUCTION = (
     "methods, benchmarks, metrics, trends, and open gaps."
 )
 
-# Per-step save instructions (update Chroma collections)
 SAVE_SEARCH_INSTRUCTION = (
     "IMPORTANT: You MUST save the search results now. "
     "Call db_store_tool_results "
@@ -83,7 +160,6 @@ SAVE_SYNTHESIZE_INSTRUCTION = (
     "Extract the 'tool_call_id' field from the tool response."
 )
 
-# Validation prompts per step
 VALIDATE_SEARCH = (
     "Approve the search results and confirm the 'raw' collection is updated "
     "with all search results (web and papers)."

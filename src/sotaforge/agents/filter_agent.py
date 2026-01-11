@@ -7,9 +7,9 @@ from pydantic import Field, create_model
 from pydantic_ai import Agent
 
 from sotaforge.utils.constants import PYDANTIC_AI_MODEL
-from sotaforge.utils.dataclasses import DocumentScore
 from sotaforge.utils.db import ChromaStore
 from sotaforge.utils.logger import get_logger
+from sotaforge.utils.models import DocumentScore
 
 logger = get_logger(__name__)
 server = FastMCP("filter")

@@ -9,14 +9,11 @@ from openai.types.chat import (
     ChatCompletionUserMessageParam,
 )
 
-from sotaforge.utils.constants import (
-    MODEL,
-    SYNTHESIZER_PROMPT,
-    SYNTHESIZER_SYSTEM_PROMPT,
-)
-from sotaforge.utils.dataclasses import ParsedDocument
+from sotaforge.utils.constants import MODEL
 from sotaforge.utils.db import ChromaStore
 from sotaforge.utils.logger import get_logger
+from sotaforge.utils.models import ParsedDocument
+from sotaforge.utils.prompts import SYNTHESIZER_PROMPT, SYNTHESIZER_SYSTEM_PROMPT
 
 logger = get_logger(__name__)
 server = FastMCP("synthesizer")
@@ -80,7 +77,6 @@ async def write_sota(collection: str) -> Dict[str, Union[str, str]]:
     response = await llm.chat.completions.create(
         model=MODEL,
         messages=messages,
-        temperature=0.5,
     )
 
     content = response.choices[0].message.content or ""
