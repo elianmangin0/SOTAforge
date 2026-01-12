@@ -39,6 +39,8 @@ https://github.com/user-attachments/assets/49106f4c-3f99-4f4e-887d-4b74f9a4783e
 
 Parsing step has been edited out since it is a bit long with docling on cpu.
 
+Test it yourself [here](https://sotaforge-front.onrender.com/)
+
 
 ## Technologies & Architecture
 
