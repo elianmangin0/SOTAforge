@@ -41,7 +41,7 @@ except Exception:
 
 # In-memory task storage with progress tracking
 tasks: Dict[str, Dict[str, Any]] = {}
-progress_queues: Dict[str, asyncio.Queue] = {}
+progress_queues: Dict[str, asyncio.Queue[Any]] = {}
 
 
 class SOTARequest(BaseModel):
@@ -95,12 +95,11 @@ async def root() -> Dict[str, str]:
     }
 
 
-@app.get("/health")
+@app.api_route("/health", methods=["GET", "HEAD"])
 async def health_check() -> Dict[str, str]:
     """Detailed health check."""
     return {
         "status": "healthy",
-        "chroma_path": os.getenv("SOTAFORGE_CHROMA_PATH", "Not set"),
     }
 
 
