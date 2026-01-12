@@ -17,9 +17,6 @@ SOTAforge is a full-stack application that automates the research synthesis proc
   - [Prerequisites](#prerequisites)
   - [Backend](#backend-1)
   - [Frontend](#frontend-1)
-- [Next Steps](#next-steps)
-  - [Production Readiness](#production-readiness)
-  - [Enhanced Search Coverage](#enhanced-search-coverage)
 
 ## Problem Statement
 
@@ -37,7 +34,7 @@ An LLM orchestrator validates each step with automatic retries, delivering compr
 
 https://github.com/user-attachments/assets/49106f4c-3f99-4f4e-887d-4b74f9a4783e
 
-Parsing step has been edited out since it is a bit long with docling on cpu.
+Parsing step has been edited out since it is a bit long.
 
 Test it yourself [here](https://sotaforge-front.onrender.com/)
 
