@@ -96,6 +96,9 @@ export default function Page() {
         <p className="subtitle">
           Generate a concise State-of-the-Art summary for any research topic.
         </p>
+        <p className="subtitle" style={{ fontSize: "0.9rem", marginTop: "0.5rem", opacity: 0.8 }}>
+        Generation typically takes 10 minutes to 1 hour depending on topic complexity.
+        </p>
         <p style={{ marginTop: "0.5rem" }}>
           Source: <a className="link" href="https://github.com/elianmangin0/SOTAforge" target="_blank" rel="noreferrer">GitHub – SOTAforge</a>
         </p>
