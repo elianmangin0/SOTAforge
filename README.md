@@ -100,26 +100,5 @@ npm run dev
 # http://localhost:3000
 ```
 
-## Next Steps
-
-Potential enhancements to take this project further:
-
-### Production Readiness
-- Deploy backend with Docker and orchestration
-- Add authentication and rate limiting for API endpoints
-- Implement distributed task queue for background processing
-- Set up monitoring and observability
-- Add comprehensive test coverage and CI/CD pipelines
-
-### Enhanced Search Coverage
-- Generate multiple search queries from the base topic using LLM query expansion
-- Implement semantic query diversification to capture different angles
-- Add cross-language search capabilities
-- Support domain-specific search engines (arXiv, PubMed, IEEE Xplore)
-
-### Improved Parsing Performance
-- Deploy GPU-accelerated document parsing with specialized models or use Vision Language Models (VLM) via API for quicker and better parsing
-- Implement parallel parsing with distributed workers
-- Add support for complex document formats (equations, diagrams, charts)
 
 
