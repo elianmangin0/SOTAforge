@@ -6,8 +6,8 @@ from fastmcp import FastMCP
 from pydantic import Field, create_model
 from pydantic_ai import Agent
 
-from sotaforge.utils.constants import PYDANTIC_AI_MODEL
 from sotaforge.utils.db import ChromaStore
+from sotaforge.utils.llm import get_pydantic_model
 from sotaforge.utils.logger import get_logger
 from sotaforge.utils.models import DocumentScore
 
@@ -77,7 +77,7 @@ async def filter_results(
 
     criteria_str = "\n".join([f"{i + 1}. {c}" for i, c in enumerate(criteria)])
     score_agent = Agent(
-        PYDANTIC_AI_MODEL,
+        get_pydantic_model(),
         output_type=DynamicScoreModel,
         system_prompt=(
             "You are a strict reviewer. Score the document from 1 (poor) "

@@ -12,7 +12,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from fastmcp import FastMCP
-from openai import AsyncOpenAI, RateLimitError
+from openai import RateLimitError
 
 from sotaforge.agents import (
     analyzer_server,
@@ -27,6 +27,7 @@ from sotaforge.utils.constants import (
     MAX_RETRIES,
     MODEL,
 )
+from sotaforge.utils.llm import get_llm
 from sotaforge.utils.logger import get_logger
 from sotaforge.utils.prompts import (
     ANALYZE_INSTRUCTION,
@@ -48,7 +49,6 @@ from sotaforge.utils.prompts import (
 from sotaforge.utils.utils import get_tools_for_openai
 
 logger = get_logger("sotaforge.orchestrator")
-llm = AsyncOpenAI()
 
 server = FastMCP("orchestrator")
 
@@ -206,6 +206,7 @@ async def _chat_with_rate_limit_retry(
     Trims message history before sending to prevent token limit issues.
     """
     # Trim message history to prevent token limit errors
+    llm = get_llm()
 
     try:
         return await llm.chat.completions.create(

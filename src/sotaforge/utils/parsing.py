@@ -9,7 +9,6 @@ from typing import Any
 import fitz  # PyMuPDF
 import requests
 import trafilatura
-from openai import AsyncOpenAI
 
 from sotaforge.utils.constants import (
     MAX_CONCURRENT_PDF_PAGES,
@@ -18,12 +17,12 @@ from sotaforge.utils.constants import (
     REQUEST_TIMEOUT_PDF,
     REQUEST_TIMEOUT_WEB,
 )
+from sotaforge.utils.llm import get_llm
 from sotaforge.utils.logger import get_logger
 from sotaforge.utils.models import NotParsedDocument, ParsedDocument
 from sotaforge.utils.prompts import PDF_PARSING_PROMPT
 
 logger = get_logger(__name__)
-llm = AsyncOpenAI()
 
 # Semaphore to limit concurrent PDF page parsing
 _pdf_page_semaphore = asyncio.Semaphore(MAX_CONCURRENT_PDF_PAGES)
@@ -56,6 +55,7 @@ async def parse_single_page_with_vlm(page_image_b64: str, **kwargs: Any) -> str:
         },
     ]
 
+    llm = get_llm()
     response = await llm.chat.completions.create(
         model=MODEL,
         messages=[{"role": "user", "content": content}],  # type: ignore[misc,list-item]

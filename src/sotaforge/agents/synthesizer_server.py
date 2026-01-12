@@ -3,7 +3,6 @@
 from typing import Dict, List, Union
 
 from fastmcp import FastMCP
-from openai import AsyncOpenAI
 from openai.types.chat import (
     ChatCompletionSystemMessageParam,
     ChatCompletionUserMessageParam,
@@ -11,13 +10,13 @@ from openai.types.chat import (
 
 from sotaforge.utils.constants import MODEL
 from sotaforge.utils.db import ChromaStore
+from sotaforge.utils.llm import get_llm
 from sotaforge.utils.logger import get_logger
 from sotaforge.utils.models import ParsedDocument
 from sotaforge.utils.prompts import SYNTHESIZER_PROMPT, SYNTHESIZER_SYSTEM_PROMPT
 
 logger = get_logger(__name__)
 server = FastMCP("synthesizer")
-llm = AsyncOpenAI()
 db_store = ChromaStore()
 
 
@@ -28,6 +27,8 @@ db_store = ChromaStore()
 async def write_sota(collection: str) -> Dict[str, Union[str, str]]:
     """Generate a structured state-of-the-art summary from analyzed documents."""
     logger.info(f"Synthesizing report from collection: {collection}")
+
+    llm = get_llm()
 
     # Fetch all analyzed documents from the collection
     documents = db_store.fetch_documents(collection)

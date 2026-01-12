@@ -4,7 +4,6 @@ from enum import Enum
 
 # LLM Configuration
 MODEL: str = "gpt-5-nano"
-PYDANTIC_AI_MODEL: str = "openai:gpt-5-nano"
 PDF_PARSING_MAX_TOKENS = 65535  # Maximum tokens for PDF text extraction
 PDF_PARSING_TEMPERATURE = 0.1  # Temperature for PDF parsing
 MAX_ORCHESTRATOR_MESSAGES = 80

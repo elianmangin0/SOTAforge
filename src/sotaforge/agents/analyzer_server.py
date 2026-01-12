@@ -5,8 +5,9 @@ from typing import Any, Dict, List
 from fastmcp import FastMCP
 from pydantic_ai import Agent
 
-from sotaforge.utils.constants import ANALYZER_PROMPT_TEXT_LIMIT, PYDANTIC_AI_MODEL
+from sotaforge.utils.constants import ANALYZER_PROMPT_TEXT_LIMIT
 from sotaforge.utils.db import ChromaStore
+from sotaforge.utils.llm import get_pydantic_model
 from sotaforge.utils.logger import get_logger
 from sotaforge.utils.models import (
     NotParsedDocument,
@@ -19,9 +20,9 @@ logger = get_logger(__name__)
 server = FastMCP("analyzer")
 db_store = ChromaStore()
 
-# Create Pydantic AI agent with structured output
+# Create Pydantic AI agent with structured output using shared LLM instance
 analyzer_agent = Agent(
-    PYDANTIC_AI_MODEL,
+    get_pydantic_model(),
     output_type=ThemesAndInsights,
     system_prompt=ANALYZER_SYSTEM_PROMPT,
 )
