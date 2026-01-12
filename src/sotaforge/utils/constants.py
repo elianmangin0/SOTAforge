@@ -1,7 +1,11 @@
 """Constants for the SOTAforge project."""
 
+import os
 from enum import Enum
 
+from dotenv import load_dotenv
+
+load_dotenv(".env.secrets")
 # LLM Configuration
 MODEL: str = "gpt-5-nano"
 PDF_PARSING_MAX_TOKENS = 65535  # Maximum tokens for PDF text extraction
@@ -21,8 +25,7 @@ API_TITLE = "SOTAforge API"
 API_DESCRIPTION = "REST API for generating State-of-the-Art research summaries"
 ALLOWED_ORIGINS = [
     "http://localhost:3000",  # Next.js default dev server
-    "http://localhost:3001",
-    "http://127.0.0.1:3000",
+    os.getenv("FRONTEND_URL", "http://localhost:3000"),
 ]
 
 # Pipeline tuning constants
