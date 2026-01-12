@@ -12,6 +12,7 @@ import trafilatura
 
 from sotaforge.utils.constants import (
     MAX_CONCURRENT_PDF_PAGES,
+    MAX_PARSED_PDF_PAGES,
     MODEL,
     PDF_PARSING_MAX_TOKENS,
     REQUEST_TIMEOUT_PDF,
@@ -90,7 +91,7 @@ async def parse_pdf_with_vlm(pdf_path: Path) -> str:
     pdf_document = fitz.open(pdf_path)
 
     # Limit to first 10 pages for token efficiency
-    page_count = min(len(pdf_document), 50)
+    page_count = min(len(pdf_document), MAX_PARSED_PDF_PAGES)
     logger.debug(f"Processing {page_count} pages from PDF")
 
     # Convert pages to base64-encoded images

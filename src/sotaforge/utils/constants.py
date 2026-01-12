@@ -40,6 +40,9 @@ REQUEST_TIMEOUT_PDF = 30  # Timeout for fetching PDF files
 MAX_CONCURRENT_PARSING_REQUESTS = 5  # Limit concurrent PDF/web parsing requests
 MAX_CONCURRENT_PDF_PAGES = 10  # Limit concurrent PDF page parsing
 
+# PDF parsing limits
+MAX_PARSED_PDF_PAGES = 10
+
 
 class CollectionNames(Enum):
     """ChromaDB collection names used throughout the pipeline."""
