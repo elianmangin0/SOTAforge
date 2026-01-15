@@ -26,6 +26,7 @@ from sotaforge.utils.constants import (
     API_TITLE,
 )
 from sotaforge.utils.logger import get_logger
+from sotaforge.utils.mail import send_email
 
 # Load environment variables from .env.secrets file
 load_dotenv(".env.secrets")
@@ -49,6 +50,9 @@ class SOTARequest(BaseModel):
 
     topic: str = Field(
         ..., min_length=1, description="Research topic for SOTA generation"
+    )
+    email: str = Field(
+        ..., min_length=1, description="Email address to send results to"
     )
 
 
@@ -110,7 +114,7 @@ async def generate_sota(
     """Start a SOTA generation task and return task_id for streaming.
 
     Args:
-        request: SOTARequest containing the research topic
+        request: SOTARequest containing the research topic and email
         background_tasks: FastAPI background tasks
 
     Returns:
@@ -122,21 +126,25 @@ async def generate_sota(
     tasks[task_id] = {
         "status": "pending",
         "topic": request.topic,
+        "email": request.email,
         "created_at": datetime.now().isoformat(),
     }
 
     # Run the generation in the background
-    background_tasks.add_task(run_sota_generation, task_id, request.topic)
+    background_tasks.add_task(
+        run_sota_generation, task_id, request.topic, request.email
+    )
 
     return {"task_id": task_id}
 
 
-async def run_sota_generation(task_id: str, topic: str) -> None:
+async def run_sota_generation(task_id: str, topic: str, email: str) -> None:
     """Run SOTA generation and emit progress updates.
 
     Args:
         task_id: Unique task identifier
         topic: Research topic
+        email: User's email address for receiving results
 
     """
     queue = progress_queues[task_id]
@@ -253,12 +261,29 @@ async def run_sota_generation(task_id: str, topic: str) -> None:
 
         logger.info(f"SOTA generation completed for: {topic}")
 
+        # Send email with the results
+        await queue.put(
+            {
+                "status": "sending_email",
+                "message": "Sending results to your email...",
+                "step": "sending_email",
+                "timestamp": datetime.now().isoformat(),
+            }
+        )
+
+        try:
+            await send_email(email, topic, result)
+            logger.info(f"Email sent successfully to: {email}")
+        except Exception as email_error:
+            logger.error(f"Failed to send email: {str(email_error)}")
+            # Don't fail the whole task if email fails
+
         tasks[task_id]["status"] = "completed"
         tasks[task_id]["result"] = result
         await queue.put(
             {
                 "status": "completed",
-                "message": "SOTA generation completed!",
+                "message": "SOTA generation completed and sent to your email!",
                 "result": result,
             }
         )

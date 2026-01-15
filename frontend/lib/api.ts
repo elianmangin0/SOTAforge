@@ -18,14 +18,14 @@ interface SOTAStatusResponse {
   updated_at: string;
 }
 
-export async function requestSota(apiBase: string, topic: string): Promise<SOTAResponse>
+export async function requestSota(apiBase: string, topic: string, email: string): Promise<SOTAResponse>
 {
   const res = await fetch(`${apiBase}/api/sota`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ topic }),
+    body: JSON.stringify({ topic, email }),
   });
 
   if (!res.ok) {

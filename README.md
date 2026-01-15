@@ -43,7 +43,7 @@ Test it yourself [here](https://sotaforge-front.onrender.com/)
 
 ### Backend
 - **FastAPI** - High-performance Python API with streaming responses
-- **OpenAI API** - GPT-4 for LLM-powered validation and synthesis
+- **OpenAI API** - GPT-5 for LLM-powered validation and synthesis
 - **FastMCP** - Model Context Protocol for modular agent architecture
 - **ChromaDB** - Database for document storage and retrieval
 - **Pydantic AI** - Structured LLM outputs for reliable data extraction
@@ -51,6 +51,7 @@ Test it yourself [here](https://sotaforge-front.onrender.com/)
 
 **Key Features:**
 - Server-Sent Events (SSE) for real-time progress streaming
+- Email delivery with PDF and Markdown attachments
 - Automatic message history trimming to prevent token overages
 - Error resilience with intelligent rate-limit handling
 - Modular agent design (search, filter, parse, analyze, synthesize)
@@ -60,9 +61,6 @@ Test it yourself [here](https://sotaforge-front.onrender.com/)
 - **EventSource API**
 - **Tailwind CSS**
 - **Terminal-style Log Display**
-
-
-
 
 ### Data Pipeline
 ```
@@ -79,6 +77,7 @@ Each stage automatically stores results in ChromaDB for the next stage to consum
 - Python 3.12+, Node.js 18+
 - OpenAI API key
 - Serper API key
+- SMTP credentials (for email notifications)
 
 ### Backend
 ```bash
@@ -87,7 +86,22 @@ uv run api
 # http://localhost:8000
 ```
 
-Create a `.env.secrets` file based on `.env.secrets.template` and add your API keys.
+Create a `.env.secrets` file based on `.env.secrets.example` and add your API keys and SMTP configuration:
+```bash
+OPENAI_API_KEY=your_openai_api_key
+SERPER_API_KEY=your_serper_api_key
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your_email@gmail.com
+SMTP_PASSWORD=your_app_password
+SENDER_EMAIL=your_email@gmail.com
+```
+
+**Note:** For Gmail, you'll need to create an [App Password](https://support.google.com/accounts/answer/185833) instead of using your regular password.
+
+**Email Delivery:** Once generation completes, users receive an email with:
+- PDF report
+- Markdown file
 
 ### Frontend
 ```bash

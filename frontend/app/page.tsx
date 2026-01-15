@@ -15,6 +15,7 @@ interface ProgressEvent {
 
 export default function Page() {
   const [topic, setTopic] = useState("");
+  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ topic: string; status: string; text: string } | null>(null);
@@ -79,9 +80,22 @@ export default function Page() {
       return;
     }
 
+    const e_mail = email.trim();
+    if (!e_mail) {
+      setError("Please enter your email address.");
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(e_mail)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+
     try {
       setLoading(true);
-      const data = await requestSota(apiBase, t);
+      const data = await requestSota(apiBase, t, e_mail);
       setTaskId(data.task_id);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to generate SOTA.");
@@ -111,6 +125,13 @@ export default function Page() {
             placeholder="e.g. Diffusion models for image generation"
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
+          />
+          <input
+            className="input"
+            type="email"
+            placeholder="your.email@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
           <button className="button" type="submit" disabled={loading}>
             {loading ? "Generating…" : "Generate SOTA"}
