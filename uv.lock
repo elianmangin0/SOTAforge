@@ -130,15 +130,6 @@ wheels = [
 ]
 
 [[package]]
-name = "aiosmtplib"
-version = "5.0.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/a2/15/c2dc93a58d716bce64b53918d3cf667d86c96a56a9f3a239a9f104643637/aiosmtplib-5.0.0.tar.gz", hash = "sha256:514ac11c31cb767c764077eb3c2eb2ae48df6f63f1e847aeb36119c4fc42b52d", size = 61057, upload-time = "2025-10-19T19:12:31.426Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/99/42/b997c306dc54e6ac62a251787f6b5ec730797eea08e0336d8f0d7b899d5f/aiosmtplib-5.0.0-py3-none-any.whl", hash = "sha256:95eb0f81189780845363ab0627e7f130bca2d0060d46cd3eeb459f066eb7df32", size = 27048, upload-time = "2025-10-19T19:12:30.124Z" },
-]
-
-[[package]]
 name = "annotated-doc"
 version = "0.0.4"
 source = { registry = "https://pypi.org/simple" }
@@ -3441,6 +3432,19 @@ wheels = [
 ]
 
 [[package]]
+name = "resend"
+version = "2.19.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d8/21/1ddb4c221fc8310a99956f55c2e5e21b548378bde4a662473dcdda6f4018/resend-2.19.0.tar.gz", hash = "sha256:b11191561cdb0ed7aa193212b7c8865bf635013c4d11bd81caf471d1b362be02", size = 30604, upload-time = "2025-10-31T13:59:32.274Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a0/1f/f53acaad9299a72671c4314fd42c0b332464eaf0d20ea5303e75b8a9a963/resend-2.19.0-py2.py3-none-any.whl", hash = "sha256:1a8b9fcacbe058876ebce757ac2542103ed7227caec10e5c58613ee58615acaa", size = 50881, upload-time = "2025-10-31T13:59:31.015Z" },
+]
+
+[[package]]
 name = "rich"
 version = "14.2.0"
 source = { registry = "https://pypi.org/simple" }
@@ -3648,7 +3652,6 @@ name = "sotaforge"
 version = "0.2.0"
 source = { editable = "." }
 dependencies = [
-    { name = "aiosmtplib" },
     { name = "chromadb" },
     { name = "fastapi" },
     { name = "fastmcp" },
@@ -3661,6 +3664,7 @@ dependencies = [
     { name = "python-multipart" },
     { name = "reportlab" },
     { name = "requests" },
+    { name = "resend" },
     { name = "trafilatura" },
     { name = "uvicorn", extra = ["standard"] },
 ]
@@ -3678,7 +3682,6 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aiosmtplib", specifier = ">=3.0.0" },
     { name = "chromadb", specifier = ">=0.5.18" },
     { name = "fastapi", specifier = ">=0.115.0" },
     { name = "fastmcp", specifier = ">=2.13.1" },
@@ -3691,6 +3694,7 @@ requires-dist = [
     { name = "python-multipart", specifier = ">=0.0.9" },
     { name = "reportlab", specifier = ">=4.0.0" },
     { name = "requests", specifier = ">=2.32.0" },
+    { name = "resend", specifier = ">=2.0.0" },
     { name = "trafilatura", specifier = ">=1.6.0" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.32.0" },
 ]

@@ -77,7 +77,7 @@ Each stage automatically stores results in ChromaDB for the next stage to consum
 - Python 3.12+, Node.js 18+
 - OpenAI API key
 - Serper API key
-- SMTP credentials (for email notifications)
+- Resend API key (for email notifications)
 
 ### Backend
 ```bash
@@ -86,22 +86,19 @@ uv run api
 # http://localhost:8000
 ```
 
-Create a `.env.secrets` file based on `.env.secrets.example` and add your API keys and SMTP configuration:
+Create a `.env.secrets` file based on `.env.secrets.example` and add your API keys and Resend configuration:
 ```bash
 OPENAI_API_KEY=your_openai_api_key
 SERPER_API_KEY=your_serper_api_key
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your_email@gmail.com
-SMTP_PASSWORD=your_app_password
-SENDER_EMAIL=your_email@gmail.com
+RESEND_API_KEY=re_your_resend_api_key
+SENDER_EMAIL=onboarding@resend.dev
 ```
 
-**Note:** For Gmail, you'll need to create an [App Password](https://support.google.com/accounts/answer/185833) instead of using your regular password.
+**Note:** Sign up at [Resend](https://resend.com) to get your API key. Free tier includes 100 emails/day and 3,000 emails/month.
 
 **Email Delivery:** Once generation completes, users receive an email with:
-- PDF report
-- Markdown file
+- PDF report (professionally formatted)
+- Markdown file (raw SOTA content)
 
 ### Frontend
 ```bash

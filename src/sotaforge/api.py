@@ -43,6 +43,7 @@ except Exception:
 # In-memory task storage with progress tracking
 tasks: Dict[str, Dict[str, Any]] = {}
 progress_queues: Dict[str, asyncio.Queue[Any]] = {}
+cancelled_tasks: set[str] = set()  # Track cancelled tasks
 
 
 class SOTARequest(BaseModel):
@@ -51,8 +52,8 @@ class SOTARequest(BaseModel):
     topic: str = Field(
         ..., min_length=1, description="Research topic for SOTA generation"
     )
-    email: str = Field(
-        ..., min_length=1, description="Email address to send results to"
+    email: str | None = Field(
+        None, description="Optional email address to send results to"
     )
 
 
@@ -132,7 +133,7 @@ async def generate_sota(
 
     # Run the generation in the background
     background_tasks.add_task(
-        run_sota_generation, task_id, request.topic, request.email
+        run_sota_generation, task_id, request.topic, request.email or ""
     )
 
     return {"task_id": task_id}
@@ -160,6 +161,13 @@ async def run_sota_generation(task_id: str, topic: str, email: str) -> None:
                 "timestamp": datetime.now().isoformat(),
             }
         )
+
+        # Check if task was cancelled
+        if task_id in cancelled_tasks:
+            logger.info(f"Task {task_id} was cancelled before starting")
+            tasks[task_id]["status"] = "cancelled"
+            await queue.put({"status": "cancelled", "message": "Task cancelled"})
+            return
 
         # Set the environment variable for this specific request
         os.environ["SOTAFORGE_CHROMA_PATH"] = temp_chroma_dir
@@ -261,29 +269,35 @@ async def run_sota_generation(task_id: str, topic: str, email: str) -> None:
 
         logger.info(f"SOTA generation completed for: {topic}")
 
-        # Send email with the results
-        await queue.put(
-            {
-                "status": "sending_email",
-                "message": "Sending results to your email...",
-                "step": "sending_email",
-                "timestamp": datetime.now().isoformat(),
-            }
-        )
+        # Send email with the results if email was provided
+        if email:
+            await queue.put(
+                {
+                    "status": "sending_email",
+                    "message": "Sending results to your email...",
+                    "step": "sending_email",
+                    "timestamp": datetime.now().isoformat(),
+                }
+            )
 
-        try:
-            await send_email(email, topic, result)
-            logger.info(f"Email sent successfully to: {email}")
-        except Exception as email_error:
-            logger.error(f"Failed to send email: {str(email_error)}")
-            # Don't fail the whole task if email fails
+            try:
+                await send_email(email, topic, result)
+                logger.info(f"Email sent successfully to: {email}")
+            except Exception as email_error:
+                logger.error(f"Failed to send email: {str(email_error)}")
+                # Don't fail the whole task if email fails
 
         tasks[task_id]["status"] = "completed"
         tasks[task_id]["result"] = result
+
+        completion_message = "SOTA generation completed!"
+        if email:
+            completion_message += " Check your email for the PDF and Markdown files."
+
         await queue.put(
             {
                 "status": "completed",
-                "message": "SOTA generation completed and sent to your email!",
+                "message": completion_message,
                 "result": result,
             }
         )
@@ -307,6 +321,33 @@ async def run_sota_generation(task_id: str, topic: str, email: str) -> None:
 
         # Signal end of stream
         await queue.put(None)
+
+        # Clean up cancelled task tracking
+        if task_id in cancelled_tasks:
+            cancelled_tasks.remove(task_id)
+
+
+@app.delete("/api/sota/{task_id}")
+async def cancel_sota(task_id: str) -> Dict[str, str]:
+    """Cancel a SOTA generation task.
+
+    Args:
+        task_id: Unique identifier for the generation task
+
+    Returns:
+        Cancellation confirmation
+
+    """
+    if task_id not in tasks:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    # Mark task as cancelled
+    cancelled_tasks.add(task_id)
+    tasks[task_id]["status"] = "cancelled"
+
+    logger.info(f"Task {task_id} marked for cancellation")
+
+    return {"status": "cancelled", "message": "Task cancellation requested"}
 
 
 @app.get("/api/sota/status/{task_id}")

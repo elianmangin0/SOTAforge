@@ -1,20 +1,17 @@
 """Email functionality for SOTAforge - PDF generation and email delivery."""
 
+import base64
 import os
 from datetime import datetime
-from email.mime.application import MIMEApplication
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 from io import BytesIO
 from typing import Any, Dict
 
-import aiosmtplib
+import resend
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
 from reportlab.platypus import HRFlowable, Paragraph, SimpleDocTemplate, Spacer
 
-from sotaforge.utils.errors import ConfigurationError
 from sotaforge.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -120,7 +117,7 @@ def generate_pdf(topic: str, result: Dict[str, Any]) -> bytes:
 
 
 async def send_email(recipient: str, topic: str, result: Dict[str, Any]) -> None:
-    """Send SOTA results via email with PDF and Markdown attachments.
+    """Send SOTA results via email with PDF and Markdown attachments using Resend.
 
     Args:
         recipient: Email address to send to
@@ -131,29 +128,23 @@ async def send_email(recipient: str, topic: str, result: Dict[str, Any]) -> None
         Exception: If email sending fails
 
     """
-    # Get SMTP configuration from environment variables
-    smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com")
-    smtp_port = int(os.getenv("SMTP_PORT", "587"))
-    smtp_user = os.getenv("SMTP_USER")
-    smtp_password = os.getenv("SMTP_PASSWORD")
-    sender_email = os.getenv("SENDER_EMAIL", smtp_user)
+    # Get Resend API key from environment
+    resend_api_key = os.getenv("RESEND_API_KEY")
+    sender_email = os.getenv("SENDER_EMAIL", "onboarding@resend.dev")
 
-    if not smtp_user or not smtp_password:
-        logger.warning("SMTP credentials not configured, skipping email")
+    if not resend_api_key:
+        logger.warning("RESEND_API_KEY not configured, skipping email")
         return
 
-    # Create multipart message
-    message = MIMEMultipart()
-    if sender_email:
-        message["From"] = sender_email
-    else:
-        raise ConfigurationError("Sender email is not configured.")
-    message["To"] = recipient
-    message["Subject"] = f"SOTAforge: Your SOTA for '{topic}' is ready!"
+    # Set API key
+    resend.api_key = resend_api_key
 
-    # Email body
+    # Email subject and body
     status = result.get("status", "unknown")
+    subject = f"SOTAforge: Your SOTA for '{topic}' is ready!"
+
     body = f"""Hello!
+
         Your State-of-the-Art (SOTA) summary for the topic "{topic}" has been generated.
 
         Status: {status}
@@ -168,45 +159,58 @@ async def send_email(recipient: str, topic: str, result: Dict[str, Any]) -> None
         The SOTAforge Team
         https://github.com/elianmangin0/SOTAforge
         """
-    message.attach(MIMEText(body, "plain"))
+    # Prepare attachments
+    attachments = []
 
     # Generate and attach PDF
     try:
         pdf_bytes = generate_pdf(topic, result)
-        pdf_attachment = MIMEApplication(pdf_bytes, _subtype="pdf")
+        pdf_base64 = base64.b64encode(pdf_bytes).decode("utf-8")
         pdf_filename = f"SOTA_{topic.replace(' ', '_')[:50]}.pdf"
-        pdf_attachment.add_header(
-            "Content-Disposition", "attachment", filename=pdf_filename
+
+        attachments.append(
+            {
+                "filename": pdf_filename,
+                "content": pdf_base64,
+            }
         )
-        message.attach(pdf_attachment)
         logger.info(f"PDF generated: {pdf_filename}")
     except Exception as e:
         logger.error(f"Failed to generate PDF: {str(e)}")
 
-    # Generate and attach Markdown
+    # Attach Markdown
     try:
         sota_text = result.get("text", "No content available")
-        md_attachment = MIMEText(sota_text, "plain")
+        md_base64 = base64.b64encode(sota_text.encode("utf-8")).decode("utf-8")
         md_filename = f"SOTA_{topic.replace(' ', '_')[:50]}.md"
-        md_attachment.add_header(
-            "Content-Disposition", "attachment", filename=md_filename
+
+        attachments.append(
+            {
+                "filename": md_filename,
+                "content": md_base64,
+            }
         )
-        message.attach(md_attachment)
         logger.info(f"Markdown attached: {md_filename}")
     except Exception as e:
         logger.error(f"Failed to attach Markdown: {str(e)}")
 
-    # Send email
+    # Send email using Resend
     try:
-        await aiosmtplib.send(
-            message,
-            hostname=smtp_host,
-            port=smtp_port,
-            username=smtp_user,
-            password=smtp_password,
-            start_tls=True,
+        params: Dict[str, Any] = {
+            "from": sender_email,
+            "to": [recipient],
+            "subject": subject,
+            "text": body,
+        }
+
+        if attachments:
+            params["attachments"] = attachments
+
+        response = resend.Emails.send(params)  # type: ignore[arg-type]
+        logger.info(
+            f"Email sent successfully to {recipient}"
+            f" via Resend. ID: {response.get('id')}"
         )
-        logger.info(f"Email sent successfully to {recipient} with attachments")
     except Exception as e:
         logger.error(f"Failed to send email to {recipient}: {str(e)}")
         raise
