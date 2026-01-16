@@ -86,12 +86,12 @@ uv run api
 # http://localhost:8000
 ```
 
-Create a `.env.secrets` file based on `.env.secrets.example` and add your API keys and Resend configuration:
+Create a `.env.secrets` file based on `.env.secrets.template` and add your API keys and Resend configuration:
 ```bash
 OPENAI_API_KEY=your_openai_api_key
 SERPER_API_KEY=your_serper_api_key
 RESEND_API_KEY=re_your_resend_api_key
-SENDER_EMAIL=onboarding@resend.dev
+SENDER_EMAIL=your_mail@your_domain
 ```
 
 **Note:** Sign up at [Resend](https://resend.com) to get your API key. Free tier includes 100 emails/day and 3,000 emails/month.

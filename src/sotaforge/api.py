@@ -220,8 +220,8 @@ async def run_sota_generation(task_id: str, topic: str, email: str) -> None:
 
         # Import (or reload) MCP agents after setting the env var
         module_names = [
-            "sotaforge.agents.db_agent",
-            "sotaforge.agents.filter_agent",
+            "sotaforge.agents.db_server",
+            "sotaforge.agents.filter_server",
             "sotaforge.agents.parser_server",
             "sotaforge.agents.analyzer_server",
             "sotaforge.agents.synthesizer_server",

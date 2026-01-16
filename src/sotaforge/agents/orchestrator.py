@@ -16,8 +16,8 @@ from openai import RateLimitError
 
 from sotaforge.agents import (
     analyzer_server,
-    db_agent,
-    filter_agent,
+    db_server,
+    filter_server,
     parser_server,
     search_server,
     synthesizer_server,
@@ -187,11 +187,11 @@ async def _emit_tool_progress(tool_name: str, tool_args: dict[str, Any]) -> None
 
 # Mount in-process FastMCP servers with prefixes
 server.mount(search_server.server, prefix="search")
-server.mount(filter_agent.server, prefix="filter")
+server.mount(filter_server.server, prefix="filter")
 server.mount(parser_server.server, prefix="parser")
 server.mount(analyzer_server.server, prefix="analyzer")
 server.mount(synthesizer_server.server, prefix="synthesizer")
-server.mount(db_agent.server, prefix="db")
+server.mount(db_server.server, prefix="db")
 
 # Type alias for message dictionaries
 ChatMessage = Dict[str, Any]
