@@ -41,7 +41,7 @@ REQUEST_TIMEOUT_WEB = 10  # Timeout for fetching web pages
 REQUEST_TIMEOUT_PDF = 30  # Timeout for fetching PDF files
 
 # Rate limiting
-MAX_CONCURRENT_PARSING_REQUESTS = 3  # Limit concurrent PDF/web parsing requests
+MAX_CONCURRENT_PARSING_REQUESTS = 1  # Limit concurrent PDF/web parsing requests
 MAX_CONCURRENT_PDF_PAGES = 5  # Limit concurrent PDF page parsing
 
 # PDF parsing limits
