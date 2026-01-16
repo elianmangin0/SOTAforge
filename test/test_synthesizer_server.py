@@ -98,6 +98,7 @@ async def test_write_sota_empty_collection(monkeypatch: pytest.MonkeyPatch) -> N
 async def test_write_sota_with_long_text(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test SOTA generation handles long document text by using snippets."""
     from sotaforge.utils import llm
+    from sotaforge.utils.constants import SYNTHESIZER_PROMPT_TEXT_LIMIT
 
     monkeypatch.setenv("OPENAI_API_KEY", "test-key")
 
@@ -134,8 +135,8 @@ async def test_write_sota_with_long_text(monkeypatch: pytest.MonkeyPatch) -> Non
 
     synthesizer_server = importlib.import_module("sotaforge.agents.synthesizer_server")
 
-    # Create document with very long text
-    long_text = "x" * 2000
+    # Create document with very long text (longer than the limit)
+    long_text = "x" * (SYNTHESIZER_PROMPT_TEXT_LIMIT + 100)
     docs = [
         ParsedDocument(
             title="Long Paper",

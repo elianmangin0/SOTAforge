@@ -83,7 +83,11 @@ async def analyze_documents(
             f"Title: {document.title}\n"
             f"Source Type: {document.source_type}\n\n"
             # Keep prompt context short to avoid token overages
-            f"Document text (truncated):\n{document.text[:ANALYZER_PROMPT_TEXT_LIMIT]}"
+            f"Document text (truncated):\n{
+                document.text[:ANALYZER_PROMPT_TEXT_LIMIT]
+                if len(document.text) > ANALYZER_PROMPT_TEXT_LIMIT
+                else document.text
+            }"
         )
 
         try:

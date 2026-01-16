@@ -33,6 +33,7 @@ MAX_MESSAGE_HISTORY = 30  # Trim message history to prevent token overages
 DOC_TEXT_LIMIT_FULL = 3000  # Character limit for full document text storage
 DOC_TEXT_LIMIT_RETURN = 800  # Character limit for document text in LLM responses
 ANALYZER_PROMPT_TEXT_LIMIT = 10_000  # Character limit for analyzer prompt context
+SYNTHESIZER_PROMPT_TEXT_LIMIT = 5_000  # Character limit for synthesizer prompt context
 MAX_RETRIES = 3  # Maximum validation retries per pipeline step
 
 # Request timeouts (in seconds)
@@ -40,8 +41,8 @@ REQUEST_TIMEOUT_WEB = 10  # Timeout for fetching web pages
 REQUEST_TIMEOUT_PDF = 30  # Timeout for fetching PDF files
 
 # Rate limiting
-MAX_CONCURRENT_PARSING_REQUESTS = 5  # Limit concurrent PDF/web parsing requests
-MAX_CONCURRENT_PDF_PAGES = 10  # Limit concurrent PDF page parsing
+MAX_CONCURRENT_PARSING_REQUESTS = 3  # Limit concurrent PDF/web parsing requests
+MAX_CONCURRENT_PDF_PAGES = 5  # Limit concurrent PDF page parsing
 
 # PDF parsing limits
 MAX_PARSED_PDF_PAGES = 10

@@ -8,7 +8,7 @@ from openai.types.chat import (
     ChatCompletionUserMessageParam,
 )
 
-from sotaforge.utils.constants import MODEL
+from sotaforge.utils.constants import MODEL, SYNTHESIZER_PROMPT_TEXT_LIMIT
 from sotaforge.utils.db import ChromaStore
 from sotaforge.utils.llm import get_llm
 from sotaforge.utils.logger import get_logger
@@ -56,7 +56,7 @@ async def write_sota(collection: str) -> Dict[str, Union[str, str]]:
                 f"Insights: {', '.join(doc.insights) if doc.insights else 'N/A'}\n"
                 f"Content: {
                     doc.text
-                    if len(doc.text) < 1500
+                    if len(doc.text) < SYNTHESIZER_PROMPT_TEXT_LIMIT
                     else (doc.snippet or doc.abstract or 'N/A')
                 }"
             )
